@@ -23,12 +23,19 @@ namespace PdfExtractor
     {
         private readonly HttpClient httpClient;
         private const string BASE_URL = "http://192.168.100.80:7778/reports/rwservlet/getjobid{0}?SERVER=rep_vmo_bck";
+        private const string SIGEMI_URL = "http://192.168.100.80:7778/forms/frmservlet?config=sigemi-vmo";
         private const string NOTES_FILE = "quick_notes.txt";
         private string currentPdfContent = "";
-        private byte[]? currentPdfData;
+        private byte[] currentPdfData;
 
+        // Variables para la calculadora
+        private string currentInput = "0";
+        private string operation = "";
+        private decimal firstOperand = 0;
+        private bool isNewEntry = true;
+        private StringBuilder calculatorHistory = new StringBuilder();
+        
         // Variables para el navegador web
-        private string GetWebPageUrl() => AppConfig.Load().WebPageUrl;
 
         // Debug logging
         private void LogDebug(string message)
@@ -69,7 +76,7 @@ namespace PdfExtractor
             // Debug: Mostrar información de inicio
             LogDebug("=== INICIO DE APLICACIÓN ===");
             LogDebug($"Fecha: {DateTime.Now}");
-            LogDebug($"URL SIGEMI: {GetWebPageUrl()}");
+            LogDebug($"URL SIGEMI: {SIGEMI_URL}");
             
             // Inicializar WebBrowser
             InitializeWebBrowser();
@@ -118,14 +125,14 @@ namespace PdfExtractor
                 LogDebug($"WebBrowser Version: {WebBrowser.Version}");
                 
                 // Navegar a la URL inicial con delay
-                LogDebug($"Intentando navegar a: {GetWebPageUrl()}");
+                LogDebug($"Intentando navegar a: {SIGEMI_URL}");
                 
                 // Usar Dispatcher para asegurar que el WebBrowser esté completamente inicializado
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try
                     {
-                        NavigateToUrl(GetWebPageUrl());
+                        NavigateToUrl(SIGEMI_URL);
                     }
                     catch (Exception navEx)
                     {
@@ -144,7 +151,7 @@ namespace PdfExtractor
             }
         }
 
-        private void WebBrowser_Navigated(object? sender, System.Windows.Forms.WebBrowserNavigatedEventArgs e)
+        private void WebBrowser_Navigated(object sender, System.Windows.Forms.WebBrowserNavigatedEventArgs e)
         {
             try
             {
@@ -162,7 +169,7 @@ namespace PdfExtractor
             }
         }
 
-        private void WebBrowser_NewWindow(object? sender, System.ComponentModel.CancelEventArgs e)
+        private void WebBrowser_NewWindow(object sender, System.ComponentModel.CancelEventArgs e)
         {
             try
             {
@@ -225,7 +232,7 @@ namespace PdfExtractor
 
         private void NavigateButton_Click(object sender, RoutedEventArgs e)
         {
-            NavigateToUrl(GetWebPageUrl());
+            NavigateToUrl("http://192.168.100.80:7778/forms/frmservlet?config=sigemi-vmo");
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -236,7 +243,7 @@ namespace PdfExtractor
                 System.Diagnostics.Debug.WriteLine($"WebBrowser estado: {WebBrowser?.ReadyState}");
                 System.Diagnostics.Debug.WriteLine($"URL actual: {WebBrowser?.Url}");
                 
-                WebBrowser?.Refresh();
+                WebBrowser.Refresh();
                 System.Diagnostics.Debug.WriteLine("WebBrowser.Refresh() ejecutado");
             }
             catch (Exception ex)
@@ -258,7 +265,7 @@ namespace PdfExtractor
                 
                 if (string.IsNullOrEmpty(testUrl))
                 {
-                    testUrl = GetWebPageUrl();
+                    testUrl = SIGEMI_URL;
                 }
                 
                 LogDebug($"Testeando URL: {testUrl}");
@@ -292,7 +299,7 @@ namespace PdfExtractor
             }
         }
 
-        private void WebBrowser_DocumentCompleted(object? sender, System.Windows.Forms.WebBrowserDocumentCompletedEventArgs e)
+        private void WebBrowser_DocumentCompleted(object sender, System.Windows.Forms.WebBrowserDocumentCompletedEventArgs e)
         {
             try
             {
@@ -318,7 +325,7 @@ namespace PdfExtractor
                     for (int i = 0; i < applets.Count; i++)
                     {
                         var applet = applets[i];
-                        LogDebug($"Applet {i}: {applet?.GetAttribute("code")} - {applet?.GetAttribute("archive")}");
+                        LogDebug($"Applet {i}: {applet.GetAttribute("code")} - {applet.GetAttribute("archive")}");
                     }
                     
                     // Buscar objetos embebidos
@@ -329,7 +336,7 @@ namespace PdfExtractor
                     LogDebug($"Document existe y está disponible");
                     
                     // Intentar forzar Java después de que la página esté completamente cargada
-                    if (e.Url?.ToString().Contains("frmservlet") == true)
+                    if (e.Url.ToString().Contains("frmservlet"))
                     {
                         LogDebug("Página de Oracle Forms detectada - aplicando configuraciones Java...");
                         
@@ -366,7 +373,7 @@ namespace PdfExtractor
                         var result = WebBrowser.Document.InvokeScript("eval", new object[] { "navigator.javaEnabled()" });
                         LogDebug($"Java habilitado después de configuración: {result}");
                         
-                        if (result?.ToString()?.ToLower() == "true")
+                        if (result != null && result.ToString().ToLower() == "true")
                         {
                             LogDebug("🎉 ¡JAVA HABILITADO EXITOSAMENTE!");
                             
@@ -625,7 +632,7 @@ namespace PdfExtractor
             }
         }
 
-        private void WebBrowser_Navigating(object? sender, System.Windows.Forms.WebBrowserNavigatingEventArgs e)
+        private void WebBrowser_Navigating(object sender, System.Windows.Forms.WebBrowserNavigatingEventArgs e)
         {
             try
             {
@@ -708,11 +715,11 @@ namespace PdfExtractor
             }
         }
 
-        private Task ExtractDataAutomatically()
+        private async Task ExtractDataAutomatically()
         {
             if (string.IsNullOrEmpty(currentPdfContent))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             try
@@ -727,7 +734,7 @@ namespace PdfExtractor
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error cargando configuración: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return Task.CompletedTask;
+                    return;
                 }
                 
                 if (string.IsNullOrEmpty(config.SaveLocation))
@@ -736,7 +743,7 @@ namespace PdfExtractor
                     var configWindow = new ConfigWindow();
                     configWindow.Owner = this;
                     if (configWindow.ShowDialog() != true)
-                        return Task.CompletedTask;
+                        return;
                     config = AppConfig.Load();
                 }
 
@@ -752,14 +759,14 @@ namespace PdfExtractor
                 {
                     MessageBox.Show($"Error extrayendo datos del PDF: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     txtStatus.Text = "Error en extracción de datos";
-                    return Task.CompletedTask;
+                    return;
                 }
                 
                 if (extractedData == null)
                 {
                     MessageBox.Show("Error al extraer datos del PDF.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     txtStatus.Text = "Error en extracción de datos";
-                    return Task.CompletedTask;
+                    return;
                 }
 
                 txtStatus.Text = "Abriendo ventana de revisión...";
@@ -774,7 +781,7 @@ namespace PdfExtractor
                 {
                     MessageBox.Show($"Error creando ventana de revisión: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     txtStatus.Text = "Error creando ventana";
-                    return Task.CompletedTask;
+                    return;
                 }
                 
                 bool? result = reviewWindow.ShowDialog();
@@ -783,15 +790,8 @@ namespace PdfExtractor
                 {
                     try
                     {
-                        bool saved = DataService.AddLoteWithConfirmation(extractedData, config.SaveLocation);
-                        if (saved)
-                        {
-                            txtStatus.Text = "Datos guardados correctamente.";
-                        }
-                        else
-                        {
-                            txtStatus.Text = "Guardado cancelado por el usuario.";
-                        }
+                        DataService.AddLote(extractedData, config.SaveLocation);
+                        txtStatus.Text = "Datos guardados correctamente.";
                     }
                     catch (Exception ex)
                     {
@@ -809,7 +809,6 @@ namespace PdfExtractor
                 MessageBox.Show($"Error general: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 txtStatus.Text = "Error en proceso automático";
             }
-            return Task.CompletedTask;
         }
 
         private void BtnExtractData_Click(object sender, RoutedEventArgs e)
@@ -930,17 +929,9 @@ namespace PdfExtractor
                     System.Diagnostics.Debug.WriteLine("Step 5: Saving data...");
                     try
                     {
-                        bool saved = DataService.AddLoteWithConfirmation(extractedData, config.SaveLocation);
-                        if (saved)
-                        {
-                            txtStatus.Text = "Datos guardados correctamente.";
-                            System.Diagnostics.Debug.WriteLine("Data saved successfully");
-                        }
-                        else
-                        {
-                            txtStatus.Text = "Guardado cancelado por el usuario.";
-                            System.Diagnostics.Debug.WriteLine("Save cancelled by user");
-                        }
+                        DataService.AddLote(extractedData, config.SaveLocation);
+                        txtStatus.Text = "Datos guardados correctamente.";
+                        System.Diagnostics.Debug.WriteLine("Data saved successfully");
                     }
                     catch (Exception ex)
                     {
@@ -1215,155 +1206,154 @@ namespace PdfExtractor
             }
         }
 
-        // Eventos del control de caja simplificado
-        private void BtnCalcularTotal_Click(object sender, RoutedEventArgs e)
+        // Eventos de la calculadora
+        private void Calculator_Click(object sender, RoutedEventArgs e)
         {
-            CalcularSubtotalesControlCaja();
+            if (sender is Button button)
+            {
+                string buttonContent = button.Content.ToString() ?? "";
+                ProcessCalculatorInput(buttonContent);
+            }
         }
 
-        private void BtnLimpiarConteo_Click(object sender, RoutedEventArgs e)
+        private void ProcessCalculatorInput(string input)
         {
             try
             {
-                // Limpiar todas las cantidades
-                txt20000Cantidad.Text = "0";
-                txt10000Cantidad.Text = "0";
-                txt2000Cantidad.Text = "0";
-                txt1000Cantidad.Text = "0";
-                txt500Cantidad.Text = "0";
-                txt200Cantidad.Text = "0";
-                txt100Cantidad.Text = "0";
-                txtTarjetasCantidad.Text = "0";
-                txtChequesCantidad.Text = "0";
-                txtLibre1Cantidad.Text = "0";
-                txtLibre2Cantidad.Text = "0";
-                txtLibre3Cantidad.Text = "0";
-                txtLibre4Cantidad.Text = "0";
+                string previousDisplay = txtCalculatorDisplay.Text;
                 
-                CalcularSubtotalesControlCaja();
+                switch (input)
+                {
+                    case "C":
+                        currentInput = "0";
+                        operation = "";
+                        firstOperand = 0;
+                        isNewEntry = true;
+                        calculatorHistory.AppendLine($"Limpiar todo");
+                        break;
+                        
+                    case "CE":
+                        currentInput = "0";
+                        isNewEntry = true;
+                        break;
+                        
+                    case "←":
+                        if (currentInput.Length > 1)
+                            currentInput = currentInput.Substring(0, currentInput.Length - 1);
+                        else
+                            currentInput = "0";
+                        break;
+                        
+                    case "+":
+                    case "-":
+                    case "×":
+                    case "÷":
+                        if (!string.IsNullOrEmpty(operation) && !isNewEntry)
+                        {
+                            CalculateResult();
+                        }
+                        firstOperand = decimal.Parse(currentInput.Replace(",", "."), CultureInfo.InvariantCulture);
+                        operation = input;
+                        isNewEntry = true;
+                        break;
+                        
+                    case "=":
+                        if (!string.IsNullOrEmpty(operation))
+                        {
+                            decimal secondOperand = decimal.Parse(currentInput.Replace(",", "."), CultureInfo.InvariantCulture);
+                            string calculation = $"{firstOperand} {operation} {secondOperand} = ";
+                            CalculateResult();
+                            calculation += currentInput;
+                            calculatorHistory.AppendLine(calculation);
+                            UpdateCalculatorHistory();
+                        }
+                        operation = "";
+                        isNewEntry = true;
+                        break;
+                        
+                    case ",":
+                        if (!currentInput.Contains(","))
+                            currentInput += ",";
+                        isNewEntry = false;
+                        break;
+                        
+                    default: // Números
+                        if (isNewEntry)
+                        {
+                            currentInput = input;
+                            isNewEntry = false;
+                        }
+                        else
+                        {
+                            if (currentInput == "0")
+                                currentInput = input;
+                            else
+                                currentInput += input;
+                        }
+                        break;
+                }
+                
+                txtCalculatorDisplay.Text = FormatCalculatorDisplay(currentInput);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al limpiar conteo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                txtCalculatorDisplay.Text = "Error";
+                System.Diagnostics.Debug.WriteLine($"Calculator error: {ex.Message}");
             }
         }
 
-        private void CalcularSubtotalesControlCaja()
+        private void UpdateCalculatorHistory()
         {
-            try
-            {
-                decimal total = 0;
-
-                // Calcular subtotales de billetes
-                total += CalcularSubtotal(txt20000Cantidad, txt20000Subtotal, 20000);
-                total += CalcularSubtotal(txt10000Cantidad, txt10000Subtotal, 10000);
-                total += CalcularSubtotal(txt2000Cantidad, txt2000Subtotal, 2000);
-                total += CalcularSubtotal(txt1000Cantidad, txt1000Subtotal, 1000);
-                total += CalcularSubtotal(txt500Cantidad, txt500Subtotal, 500);
-                total += CalcularSubtotal(txt200Cantidad, txt200Subtotal, 200);
-                total += CalcularSubtotal(txt100Cantidad, txt100Subtotal, 100);
-
-                // Calcular otros medios de pago (estos deben ser valores directos, no cantidades)
-                total += CalcularSubtotalDirecto(txtTarjetasCantidad, txtTarjetasSubtotal);
-                total += CalcularSubtotalDirecto(txtChequesCantidad, txtChequesSubtotal);
-
-                // Calcular campos libres (valores directos)
-                total += CalcularSubtotalDirecto(txtLibre1Cantidad, txtLibre1Subtotal);
-                total += CalcularSubtotalDirecto(txtLibre2Cantidad, txtLibre2Subtotal);
-                total += CalcularSubtotalDirecto(txtLibre3Cantidad, txtLibre3Subtotal);
-                total += CalcularSubtotalDirecto(txtLibre4Cantidad, txtLibre4Subtotal);
-
-                // Actualizar total
-                txtTotalContado.Text = FormatCurrency(total);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error calculando subtotales: {ex.Message}");
-            }
+            var historyLines = calculatorHistory.ToString().Split('\n');
+            var recentHistory = historyLines.Reverse().Take(10).Reverse().Where(line => !string.IsNullOrWhiteSpace(line));
+            txtCalculatorHistory.Text = string.Join(Environment.NewLine, recentHistory);
         }
 
-        private decimal CalcularSubtotal(TextBox cantidadTextBox, TextBox subtotalTextBox, decimal denominacion)
+        private void CalculateResult()
         {
             try
             {
-                if (int.TryParse(cantidadTextBox.Text, out int cantidad))
+                decimal secondOperand = decimal.Parse(currentInput.Replace(",", "."), CultureInfo.InvariantCulture);
+                decimal result = 0;
+
+                switch (operation)
                 {
-                    decimal subtotal = cantidad * denominacion;
-                    subtotalTextBox.Text = FormatCurrency(subtotal);
-                    return subtotal;
+                    case "+":
+                        result = firstOperand + secondOperand;
+                        break;
+                    case "-":
+                        result = firstOperand - secondOperand;
+                        break;
+                    case "×":
+                        result = firstOperand * secondOperand;
+                        break;
+                    case "÷":
+                        if (secondOperand != 0)
+                            result = firstOperand / secondOperand;
+                        else
+                        {
+                            txtCalculatorDisplay.Text = "Error";
+                            return;
+                        }
+                        break;
                 }
-                else
-                {
-                    subtotalTextBox.Text = "$ 0,00";
-                    return 0;
-                }
+
+                currentInput = result.ToString("F2", CultureInfo.InvariantCulture).Replace(".", ",");
+                firstOperand = result;
             }
             catch
             {
-                subtotalTextBox.Text = "$ 0,00";
-                return 0;
+                txtCalculatorDisplay.Text = "Error";
             }
         }
 
-        private decimal CalcularSubtotalDirecto(TextBox valorTextBox, TextBox subtotalTextBox)
+        private string FormatCalculatorDisplay(string value)
         {
-            try
+            if (decimal.TryParse(value.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal number))
             {
-                if (decimal.TryParse(valorTextBox.Text.Replace(".", ","), out decimal valor))
-                {
-                    subtotalTextBox.Text = FormatCurrency(valor);
-                    return valor;
-                }
-                else
-                {
-                    subtotalTextBox.Text = "$ 0,00";
-                    return 0;
-                }
+                return number.ToString("N2", new CultureInfo("es-AR"));
             }
-            catch
-            {
-                subtotalTextBox.Text = "$ 0,00";
-                return 0;
-            }
-        }
-
-        private void CajaTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            try
-            {
-                // Realizar cálculo automático cuando cambie cualquier campo
-                CalcularSubtotalesControlCaja();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error en CajaTextBox_TextChanged: {ex.Message}");
-            }
-        }
-
-        private string FormatCurrency(decimal value)
-        {
-            if (value == 0) return "$ 0,00";
-            // Usar punto como separador de miles y coma como decimal
-            return value.ToString("C2", new CultureInfo("es-AR")).Replace("$", "$ ");
-        }
-
-        // Eventos para simular placeholder text en campos libres
-        private void TxtLibre_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.Text == "Descripción...")
-            {
-                textBox.Text = "";
-                textBox.Foreground = System.Windows.Media.Brushes.Black;
-            }
-        }
-
-        private void TxtLibre_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && string.IsNullOrWhiteSpace(textBox.Text))
-            {
-                textBox.Text = "Descripción...";
-                textBox.Foreground = System.Windows.Media.Brushes.Gray;
-            }
+            return value;
         }
 
         // Métodos para debug
@@ -1404,7 +1394,7 @@ namespace PdfExtractor
             try
             {
                 LogDebug("=== TEST NAVEGACIÓN MANUAL ===");
-                NavigateToUrl(GetWebPageUrl());
+                NavigateToUrl(SIGEMI_URL);
             }
             catch (Exception ex)
             {
@@ -1470,7 +1460,7 @@ namespace PdfExtractor
                         timer.Tick += (s, args) => {
                             timer.Stop();
                             LogDebug("Navegando de vuelta a SIGEMI después de configurar Java...");
-                            NavigateToUrl(GetWebPageUrl());
+                            NavigateToUrl(SIGEMI_URL);
                         };
                         timer.Start();
                     }
@@ -1511,11 +1501,11 @@ namespace PdfExtractor
                     {
                         var applet = applets[i];
                         LogDebug($"Applet {i}:");
-                        LogDebug($"  - Code: {applet?.GetAttribute("code")}");
-                        LogDebug($"  - Archive: {applet?.GetAttribute("archive")}");
-                        LogDebug($"  - Width: {applet?.GetAttribute("width")}");
-                        LogDebug($"  - Height: {applet?.GetAttribute("height")}");
-                        LogDebug($"  - CodeBase: {applet?.GetAttribute("codebase")}");
+                        LogDebug($"  - Code: {applet.GetAttribute("code")}");
+                        LogDebug($"  - Archive: {applet.GetAttribute("archive")}");
+                        LogDebug($"  - Width: {applet.GetAttribute("width")}");
+                        LogDebug($"  - Height: {applet.GetAttribute("height")}");
+                        LogDebug($"  - CodeBase: {applet.GetAttribute("codebase")}");
                     }
                 }
                 
@@ -1651,10 +1641,10 @@ namespace PdfExtractor
                         if (headers.Count > 0)
                         {
                             var head = headers[0];
-                            var meta = WebBrowser.Document?.CreateElement("meta");
-                            meta?.SetAttribute("http-equiv", "X-UA-Compatible");
-                            meta?.SetAttribute("content", "IE=11");
-                            head?.AppendChild(meta);
+                            var meta = WebBrowser.Document.CreateElement("meta");
+                            meta.SetAttribute("http-equiv", "X-UA-Compatible");
+                            meta.SetAttribute("content", "IE=11");
+                            head.AppendChild(meta);
                             LogDebug("Meta tag para IE11 agregado");
                         }
                     }
@@ -1840,74 +1830,6 @@ namespace PdfExtractor
             
             httpClient?.Dispose();
             base.OnClosed(e);
-        }
-
-        // Método para extraer datos (simplificado)
-        private void BtnExtract_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string jobId = txtJobId?.Text?.Trim();
-                if (string.IsNullOrEmpty(jobId))
-                {
-                    MessageBox.Show("Por favor ingrese un ID de trabajo.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                txtStatus.Text = "Procesando...";
-                // Lógica de extracción aquí - redirigir a BtnProcess_Click
-                BtnProcess_Click(sender, e);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error en extracción: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                txtStatus.Text = "Error en extracción";
-            }
-        }
-
-        // Método para guardar notas
-        private void BtnSaveNotes_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string notesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PdfExtractor", "notes.txt");
-                Directory.CreateDirectory(Path.GetDirectoryName(notesPath));
-                
-                string content = txtNotes?.Text ?? "";
-                File.WriteAllText(notesPath, content);
-                
-                MessageBox.Show("Notas guardadas correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al guardar notas: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // Método para cargar notas
-        private void BtnLoadNotes_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string notesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PdfExtractor", "notes.txt");
-                
-                if (File.Exists(notesPath))
-                {
-                    string content = File.ReadAllText(notesPath);
-                    if (txtNotes != null)
-                        txtNotes.Text = content;
-                    
-                    MessageBox.Show("Notas cargadas correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show("No se encontró archivo de notas.", "Información", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error al cargar notas: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
     }
 }

@@ -89,7 +89,7 @@ namespace PdfExtractor.Services
         {
             try
             {
-                var appName = Path.GetFileName(Process.GetCurrentProcess().MainModule?.FileName ?? "PdfExtractor.exe");
+                var appName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
                 
                 // Configurar IE para usar modo de compatibilidad
                 Registry.SetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION", 

@@ -45,8 +45,7 @@
                     <DatePicker x:Name="dpFechaHasta" Width="120" Height="25" SelectedDateChanged="Filter_Changed" Margin="0,0,25,0"/>
                     
                     <Button x:Name="btnClearFilter" Content="🗑️ Limpiar Filtros" Width="120" Height="25" Click="BtnClearFilter_Click" Margin="0,0,10,0" Background="LightCoral"/>
-                    <Button x:Name="btnMarcarDepositado" Content="✅ Marcar Depositado" Width="140" Height="25" Click="BtnMarcarDepositado_Click" Background="LightGreen" Margin="0,0,10,0"/>
-                    <Button x:Name="btnBorrarLotes" Content="🗑️ Borrar Seleccionados" Width="140" Height="25" Click="BtnBorrarLotes_Click" Background="LightPink"/>
+                    <Button x:Name="btnMarcarDepositado" Content="✅ Marcar Depositado" Width="140" Height="25" Click="BtnMarcarDepositado_Click" Background="LightGreen"/>
                 </StackPanel>
             </Grid>
         </GroupBox>

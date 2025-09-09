@@ -25,7 +25,7 @@
             <Button Grid.Column="2" x:Name="btnBrowse" Content="Examinar..." Width="80" Height="25" Click="BtnBrowse_Click"/>
         </Grid>
         
-        <Grid Grid.Row="2" Margin="0,0,0,15">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -33,16 +33,6 @@
             
             <TextBlock Grid.Column="0" Text="URL de la página web:" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <TextBox Grid.Column="1" x:Name="txtWebPageUrl" Height="25"/>
-        </Grid>
-        
-        <Grid Grid.Row="3" Margin="0,0,0,15">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            
-            <TextBlock Grid.Column="0" Text="Mover datos a nueva ubicación:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <Button Grid.Column="1" x:Name="btnMoverDatos" Content="🔄 Mover Datos" Width="100" Height="25" Click="BtnMoverDatos_Click" Background="LightBlue"/>
         </Grid>
         
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">

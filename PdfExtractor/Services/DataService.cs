@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Windows;
 using PdfExtractor.Models;
 
 namespace PdfExtractor.Services
@@ -68,60 +67,6 @@ namespace PdfExtractor.Services
             
             existingData.Add(newLote);
             SaveData(existingData, saveLocation);
-        }
-
-        public static (bool exists, LoteData? existingLote) CheckLoteExists(string loteNumber, string saveLocation)
-        {
-            var existingData = LoadData(saveLocation);
-            var existingLote = existingData.FirstOrDefault(l => l.Lote == loteNumber);
-            return (existingLote != null, existingLote);
-        }
-
-        public static bool AddLoteWithConfirmation(LoteData newLote, string saveLocation)
-        {
-            var (exists, existingLote) = CheckLoteExists(newLote.Lote, saveLocation);
-            
-            if (exists && existingLote != null)
-            {
-                // Crear mensaje de confirmación detallado
-                string mensaje = $"Ya existe un lote con el número {newLote.Lote}.\n\n";
-                mensaje += "DATOS ACTUALES:\n";
-                mensaje += $"• Día: {existingLote.Dia}\n";
-                mensaje += $"• Fecha: {existingLote.FechaString}\n";
-                mensaje += $"• Usuario: {existingLote.Usuario}\n";
-                mensaje += $"• Caja: {existingLote.Caja}\n";
-                mensaje += $"• OSM: {existingLote.OSMFormatted}\n";
-                mensaje += $"• MUNI: {existingLote.MUNIFormatted}\n";
-                mensaje += $"• Crédito: {existingLote.CreditoFormatted}\n";
-                mensaje += $"• Débito: {existingLote.DebitoFormatted}\n";
-                mensaje += $"• Cheque: {existingLote.ChequeFormatted}\n\n";
-                
-                mensaje += "NUEVOS DATOS:\n";
-                mensaje += $"• Día: {newLote.Dia}\n";
-                mensaje += $"• Fecha: {newLote.FechaString}\n";
-                mensaje += $"• Usuario: {newLote.Usuario}\n";
-                mensaje += $"• Caja: {newLote.Caja}\n";
-                mensaje += $"• OSM: {newLote.OSMFormatted}\n";
-                mensaje += $"• MUNI: {newLote.MUNIFormatted}\n";
-                mensaje += $"• Crédito: {newLote.CreditoFormatted}\n";
-                mensaje += $"• Débito: {newLote.DebitoFormatted}\n";
-                mensaje += $"• Cheque: {newLote.ChequeFormatted}\n\n";
-                
-                mensaje += "¿Desea SOBREESCRIBIR el lote existente con los nuevos datos?\n";
-                mensaje += "ADVERTENCIA: Los datos actuales se perderán permanentemente.";
-
-                var result = System.Windows.MessageBox.Show(mensaje, "Lote Duplicado - Confirmar Sobreescritura", 
-                    System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
-
-                if (result == System.Windows.MessageBoxResult.No)
-                {
-                    return false; // Usuario canceló
-                }
-            }
-
-            // Agregar o actualizar lote
-            AddLote(newLote, saveLocation);
-            return true;
         }
 
         private static LoteDataJson ConvertToJson(LoteData data)

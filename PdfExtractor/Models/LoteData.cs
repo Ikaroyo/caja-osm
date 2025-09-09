@@ -19,7 +19,6 @@ namespace PdfExtractor.Models
         private string _usuario = ""; // Nueva propiedad
         private bool _depositado = false; // Nueva propiedad
         private string _observaciones = ""; // Campo Observaciones
-        private bool _isSelected = false; // Para selección en lista
 
         public string Dia
         {
@@ -65,12 +64,6 @@ namespace PdfExtractor.Models
         {
             get => _observaciones;
             set { _observaciones = value; OnPropertyChanged(nameof(Observaciones)); }
-        }
-
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); }
         }
 
         // Notificar cambios en todas las propiedades formateadas cuando cambian los valores base
