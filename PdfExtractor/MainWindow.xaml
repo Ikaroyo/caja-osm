@@ -4,31 +4,32 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="PDF Extractor - Control de Caja OSM" Height="900" Width="1400" WindowState="Maximized">
+        Title="PDF Extractor - Control de Caja OSM" 
+        Height="900" 
+        Width="1400" 
+        WindowState="Maximized"
+        Icon="pack://application:,,,/icon.ico" 
+        WindowStartupLocation="CenterScreen">
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="650" MinWidth="400"/>
             <ColumnDefinition Width="5"/>
             <ColumnDefinition Width="*" MinWidth="300"/>
         </Grid.ColumnDefinitions>
-        
-        <!-- Left Panel: Web Browser -->
+
         <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5">
-            <Grid>
-                <!-- WebBrowser clásico para Java applets -->
-                <WindowsFormsHost Margin="5" Height="850">
-                    <wf:WebBrowser x:Name="WebBrowser" 
-                                   ScriptErrorsSuppressed="False"
-                                   WebBrowserShortcutsEnabled="True"
-                                   IsWebBrowserContextMenuEnabled="True"
-                                   AllowWebBrowserDrop="True"
-                                   DocumentCompleted="WebBrowser_DocumentCompleted"
-                                   Navigating="WebBrowser_Navigating"/>
-                </WindowsFormsHost>
-            </Grid>
+            <WindowsFormsHost Margin="5">
+                <wf:WebBrowser x:Name="WebBrowser" 
+                               ScriptErrorsSuppressed="False"
+                               WebBrowserShortcutsEnabled="True"
+                               IsWebBrowserContextMenuEnabled="True"
+                               AllowWebBrowserDrop="True"
+                               DocumentCompleted="WebBrowser_DocumentCompleted"
+                               Navigating="WebBrowser_Navigating"/>
+            </WindowsFormsHost>
         </Border>
 
-        <!-- Resizable Splitter -->
         <GridSplitter Grid.Column="1" 
                       HorizontalAlignment="Stretch" 
                       VerticalAlignment="Stretch"
@@ -37,11 +38,9 @@
                       ResizeBehavior="PreviousAndNext"
                       Width="5"/>
 
-        <!-- Right Panel: Tabs -->
         <Border Grid.Column="2" BorderBrush="DarkGray" BorderThickness="2" Margin="10">
             <TabControl x:Name="mainTabControl" Background="WhiteSmoke">
-                
-                <!-- PDF Extractor Tab -->
+
                 <TabItem Header="📄 Extractor PDF" FontWeight="Bold">
                     <Grid Margin="10">
                         <Grid.RowDefinitions>
@@ -52,84 +51,58 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="200"/>
                         </Grid.RowDefinitions>
-                        
-                        <!-- PDF Input Section -->
+
                         <GroupBox Grid.Row="0" Header="Entrada de PDF" Margin="0,0,0,10">
                             <StackPanel Margin="10">
-                                <TextBlock Text="ID del Trabajo:" FontWeight="Bold" Margin="0,0,0,5"/>
-                                <TextBox x:Name="txtJobId" Height="25" Margin="0,0,0,5"/>
                                 <TextBlock Text="Ingrese el link completo o solo el número:" FontWeight="Bold" Margin="0,0,0,5"/>
                                 <TextBox x:Name="txtInput" Height="25" Margin="0,0,0,10"/>
-                                
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                    <Button x:Name="btnExtract" Content="📥 Extraer Datos" Width="120" Height="30" 
-                                           Click="BtnExtract_Click" Margin="0,0,10,0" Background="LightCyan"/>
-                                    <Button x:Name="btnProcess" Content="� Procesar PDF" Width="120" Height="30" 
-                                           Click="BtnProcess_Click" Margin="0,0,10,0" Background="LightBlue"/>
-                                    <Button x:Name="btnExtractData" Content="⚙️ Extraer Datos" Width="120" Height="30" 
-                                           Click="BtnExtractData_Click" Margin="0,0,10,0" IsEnabled="False" Background="LightGreen" Visibility="Collapsed"/>
-                                    <Button x:Name="btnClear" Content="🗑️ Limpiar" Width="80" Height="30" 
-                                           Click="BtnClear_Click" Background="LightCoral"/>
+                                    <Button x:Name="btnProcess" Content="📥 Procesar PDF" Width="120" Height="30" Click="BtnProcess_Click" Margin="0,0,10,0" Background="LightBlue"/>
+                                    <Button x:Name="btnExtractData" Content="⚙️ Extraer Datos" Width="120" Height="30" Click="BtnExtractData_Click" Margin="0,0,10,0" IsEnabled="False" Background="LightGreen" Visibility="Collapsed"/>
+                                    <Button x:Name="btnClear" Content="🗑️ Limpiar" Width="80" Height="30" Click="BtnClear_Click" Background="LightCoral"/>
                                 </StackPanel>
                             </StackPanel>
                         </GroupBox>
-                        
-                        <!-- Management Buttons -->
+
                         <GroupBox Grid.Row="1" Header="Gestión" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Left">
-                                <Button x:Name="btnViewLotes" Content="📋 Ver Lotes" Width="100" Height="30" 
-                                       Click="BtnViewLotes_Click" Margin="0,0,10,0" Background="LightYellow"/>
+                                <Button x:Name="btnViewLotes" Content="📋 Ver Lotes" Width="100" Height="30" Click="BtnViewLotes_Click" Margin="0,0,10,0" Background="LightYellow"/>
                             </StackPanel>
                         </GroupBox>
-                        
-                        <!-- Status -->
-                        <TextBlock Grid.Row="2" x:Name="txtStatus" Text="Listo" Margin="0,0,0,10" 
-                                  Foreground="Blue" FontWeight="Bold" Background="AliceBlue" Padding="5"/>
-                        
-                        <!-- Extracted Data Display - Oculto por solicitud del usuario -->
-                                                <!-- Extracted Data Display - Oculto por solicitud del usuario -->
+
+                        <TextBlock Grid.Row="2" x:Name="txtStatus" Text="Listo" Margin="0,0,0,10" Foreground="Blue" FontWeight="Bold" Background="AliceBlue" Padding="5"/>
+
                         <GroupBox Grid.Row="3" Header="Datos Extraídos" Margin="0,0,0,10" MaxHeight="200" Visibility="Collapsed">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel x:Name="extractedDataPanel" Margin="5">
-                                    <TextBlock Text="Los datos extraídos aparecerán aquí..." 
-                                              Foreground="Gray" FontStyle="Italic"/>
+                                    <TextBlock Text="Los datos extraídos aparecerán aquí..." Foreground="Gray" FontStyle="Italic"/>
                                 </StackPanel>
                             </ScrollViewer>
                         </GroupBox>
-                        
-                        <!-- PDF Content Display - Oculto por solicitud del usuario -->
+
                         <GroupBox Grid.Row="4" Header="Contenido del PDF" Margin="0,0,0,10" Visibility="Collapsed">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <TextBox x:Name="txtContent" IsReadOnly="True" TextWrapping="Wrap" 
-                                        AcceptsReturn="True" VerticalAlignment="Stretch" 
-                                        Background="LightYellow" BorderThickness="0"/>
+                                <TextBox x:Name="txtContent" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalAlignment="Stretch" Background="LightYellow" BorderThickness="0"/>
                             </ScrollViewer>
                         </GroupBox>
-                        
-                        <!-- Quick Actions -->
+
                         <GroupBox Grid.Row="5" Header="Acciones Rápidas">
                             <Grid Margin="5">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                
                                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                                     <Button Content="💾 Guardar como..." Width="100" Height="25" Margin="0,0,5,0" Visibility="Collapsed"/>
                                     <Button Content="📧 Enviar por email" Width="120" Height="25" Margin="0,0,5,0" Visibility="Collapsed"/>
                                     <Button Content="🖨️ Imprimir" Width="80" Height="25" Click="BtnPrint_Click"/>
                                 </StackPanel>
-                                
-                                <TextBox Grid.Row="1" x:Name="txtQuickNotes" 
-                                        TextWrapping="Wrap" AcceptsReturn="True"
-                                        Background="LightGray" 
-                                        Text="Notas rápidas..."/>
+                                <TextBox Grid.Row="1" x:Name="txtQuickNotes" TextWrapping="Wrap" AcceptsReturn="True" Background="LightGray" Text="Notas rápidas..."/>
                             </Grid>
                         </GroupBox>
                     </Grid>
                 </TabItem>
-                
-                <!-- Cash Control Tab -->
+
                 <TabItem Header="💰 Control de Caja" FontWeight="Bold">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <Grid Margin="15">
@@ -139,12 +112,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            
-                            <!-- Title -->
-                            <TextBlock Grid.Row="0" Text="Control de Caja" FontWeight="Bold" FontSize="18" 
-                                      Margin="0,0,0,20" HorizontalAlignment="Center" Foreground="DarkBlue"/>
-                            
-                            <!-- Date and Cash Selection -->
+
+                            <TextBlock Grid.Row="0" Text="Control de Caja" FontWeight="Bold" FontSize="18" Margin="0,0,0,20" HorizontalAlignment="Center" Foreground="DarkBlue"/>
+
                             <GroupBox Grid.Row="1" Header="Período y Caja" Margin="0,0,0,15">
                                 <Grid Margin="10">
                                     <Grid.ColumnDefinitions>
@@ -155,13 +125,10 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="100"/>
                                     </Grid.ColumnDefinitions>
-                                    
                                     <TextBlock Grid.Column="0" Text="Desde:" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     <DatePicker Grid.Column="1" x:Name="dpFechaDesde" Margin="0,0,15,0"/>
-                                    
                                     <TextBlock Grid.Column="2" Text="Hasta:" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     <DatePicker Grid.Column="3" x:Name="dpFechaHasta" Margin="0,0,15,0"/>
-                                    
                                     <TextBlock Grid.Column="4" Text="Caja:" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     <ComboBox Grid.Column="5" x:Name="cbCajaControl" SelectedIndex="0">
                                         <ComboBoxItem Content="CAJA 1"/>
@@ -169,8 +136,7 @@
                                     </ComboBox>
                                 </Grid>
                             </GroupBox>
-                            
-                            <!-- Cash Count -->
+
                             <GroupBox Grid.Row="2" Header="Conteo de Efectivo" Margin="0,0,0,15">
                                 <Grid Margin="10">
                                     <Grid.ColumnDefinitions>
@@ -195,184 +161,130 @@
                                         <RowDefinition Height="32"/>
                                         <RowDefinition Height="5"/>
                                     </Grid.RowDefinitions>
-                                    
-                                    <!-- Headers -->
+
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Denominación" FontWeight="Bold" VerticalAlignment="Center" FontSize="10"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1" Text="Cant" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="10"/>
                                     <TextBlock Grid.Row="0" Grid.Column="2" Text="Subtotal" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="10"/>
                                     <TextBlock Grid.Row="0" Grid.Column="4" Text="Tipo" FontWeight="Bold" VerticalAlignment="Center" FontSize="10"/>
                                     <TextBlock Grid.Row="0" Grid.Column="5" Text="Cant" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="10"/>
                                     <TextBlock Grid.Row="0" Grid.Column="6" Text="Subtotal" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="10"/>
-                                    
-                                    <!-- Billetes -->
+
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="$20.000" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="1" Grid.Column="1" x:Name="txt20000Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="1" Grid.Column="2" x:Name="txt20000Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="$10.000" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="2" Grid.Column="1" x:Name="txt10000Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="2" Grid.Column="2" x:Name="txt10000Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="$2.000" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="3" Grid.Column="1" x:Name="txt2000Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="3" Grid.Column="2" x:Name="txt2000Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="4" Grid.Column="0" Text="$1.000" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="4" Grid.Column="1" x:Name="txt1000Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="4" Grid.Column="2" x:Name="txt1000Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="5" Grid.Column="0" Text="$500" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="5" Grid.Column="1" x:Name="txt500Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="5" Grid.Column="2" x:Name="txt500Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="6" Grid.Column="0" Text="$200" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="6" Grid.Column="1" x:Name="txt200Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="6" Grid.Column="2" x:Name="txt200Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="7" Grid.Column="0" Text="$100" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="7" Grid.Column="1" x:Name="txt100Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="7" Grid.Column="2" x:Name="txt100Subtotal" IsReadOnly="True" Background="LightYellow" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
-                                    <!-- Otros medios de pago -->
+
                                     <TextBlock Grid.Row="1" Grid.Column="4" Text="Tarjetas" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="1" Grid.Column="5" x:Name="txtTarjetasCantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="1" Grid.Column="6" x:Name="txtTarjetasSubtotal" IsReadOnly="True" Background="LightBlue" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="2" Grid.Column="4" Text="Cheques" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="2" Grid.Column="5" x:Name="txtChequesCantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="2" Grid.Column="6" x:Name="txtChequesSubtotal" IsReadOnly="True" Background="LightBlue" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
-                                    <!-- Campos libres compactos -->
+
                                     <TextBlock Grid.Row="4" Grid.Column="4" Text="Otros 1" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="4" Grid.Column="5" x:Name="txtLibre1Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="4" Grid.Column="6" x:Name="txtLibre1Subtotal" IsReadOnly="True" Background="LightGreen" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="5" Grid.Column="4" Text="Otros 2" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="5" Grid.Column="5" x:Name="txtLibre2Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="5" Grid.Column="6" x:Name="txtLibre2Subtotal" IsReadOnly="True" Background="LightGreen" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="6" Grid.Column="4" Text="Otros 3" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="6" Grid.Column="5" x:Name="txtLibre3Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="6" Grid.Column="6" x:Name="txtLibre3Subtotal" IsReadOnly="True" Background="LightGreen" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
+
                                     <TextBlock Grid.Row="7" Grid.Column="4" Text="Otros 4" VerticalAlignment="Center" FontSize="11"/>
                                     <TextBox Grid.Row="7" Grid.Column="5" x:Name="txtLibre4Cantidad" Text="0" TextAlignment="Center" Height="22" TextChanged="CajaTextBox_TextChanged"/>
                                     <TextBox Grid.Row="7" Grid.Column="6" x:Name="txtLibre4Subtotal" IsReadOnly="True" Background="LightGreen" TextAlignment="Right" Height="22" FontSize="10"/>
-                                    
-                                    <!-- Total -->
+
                                     <TextBlock Grid.Row="9" Grid.Column="0" Text="TOTAL CONTADO:" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2" x:Name="txtTotalContado" IsReadOnly="True" 
-                                            Background="Orange" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
+                                    <TextBox Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2" x:Name="txtTotalContado" IsReadOnly="True" Background="Orange" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
                                 </Grid>
                             </GroupBox>
-                            
-                            <!-- Action Buttons -->
+
                             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-                                <Button x:Name="btnCalcularTotal" Content="� Calcular Total" Width="130" Height="35" 
-                                       Margin="0,0,10,0" Click="BtnCalcularTotal_Click"/>
-                                <Button x:Name="btnLimpiarConteo" Content="🧹 Limpiar" Width="100" Height="35" 
-                                       Click="BtnLimpiarConteo_Click"/>
+                                <Button x:Name="btnCalcularTotal" Content="🧮 Calcular Total" Width="130" Height="35" Margin="0,0,10,0" Click="BtnCalcularTotal_Click"/>
+                                <Button x:Name="btnLimpiarConteo" Content="🧹 Limpiar" Width="100" Height="35" Click="BtnLimpiarConteo_Click"/>
                             </StackPanel>
                         </Grid>
                     </ScrollViewer>
                 </TabItem>
-                
-                <!-- Notes Tab -->
-                <TabItem Header="📝 Notas" FontWeight="Bold">
-                    <Grid Margin="10">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        
-                        <TextBlock Grid.Row="0" Text="Notas Rápidas" FontWeight="Bold" FontSize="14" Margin="0,0,0,15"/>
-                        
-                        <TextBox Grid.Row="1" x:Name="txtNotes" TextWrapping="Wrap" AcceptsReturn="True" 
-                                VerticalScrollBarVisibility="Auto" Margin="0,0,0,15"/>
-                        
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="btnSaveNotes" Content="💾 Guardar Notas" Width="120" Height="30" 
-                                   Click="BtnSaveNotes_Click" Margin="0,0,10,0"/>
-                            <Button x:Name="btnLoadNotes" Content="📂 Cargar Notas" Width="120" Height="30" 
-                                   Click="BtnLoadNotes_Click"/>
-                        </StackPanel>
-                    </Grid>
-                </TabItem>
-                
-                <!-- Additional Tools Tab -->
+
                 <TabItem Header="⚙️ Configuraciones" FontWeight="Bold">
                     <Grid Margin="10">
                         <StackPanel>
                             <GroupBox Header="Configuración de Guardado" Margin="0,0,0,20">
                                 <StackPanel Margin="10">
-                                    <Button x:Name="btnConfig" Content="💾 Configurar Ubicación de Lotes" Height="35" Margin="0,0,0,10" 
-                                           Click="BtnConfig_Click" HorizontalAlignment="Stretch" Background="LightBlue"/>
-                                    <TextBlock Text="Configura dónde se guardan los datos de los lotes procesados" 
-                                              FontStyle="Italic" Foreground="Gray" Margin="0,0,0,10"/>
+                                    <Button x:Name="btnConfig" Content="💾 Configurar Ubicación de Lotes" Height="35" Margin="0,0,0,10" Click="BtnConfig_Click" HorizontalAlignment="Stretch" Background="LightBlue"/>
+                                    <TextBlock Text="Configura dónde se guardan los datos de los lotes procesados" FontStyle="Italic" Foreground="Gray" Margin="0,0,0,10"/>
                                 </StackPanel>
                             </GroupBox>
-                            
                             <GroupBox Header="Herramientas de Sistema" Margin="0,0,0,20">
                                 <StackPanel Margin="10">
-                                    <Button Content="🔍 Verificar Java" Height="35" Margin="0,0,0,10" 
-                                           Click="BtnCheckJava_Click" HorizontalAlignment="Stretch" Visibility="Collapsed"/>
-                                    <Button Content="📁 Abrir Carpeta de Datos" Height="35" Margin="0,0,0,10" 
-                                           Click="BtnOpenDataFolder_Click" HorizontalAlignment="Stretch"/>
-                                    <Button Content="🔄 Reiniciar Aplicación" Height="35" 
-                                           Click="BtnRestartApp_Click" HorizontalAlignment="Stretch"/>
+                                    <Button Content="🔍 Verificar Java" Height="35" Margin="0,0,0,10" Click="BtnCheckJava_Click" HorizontalAlignment="Stretch" Visibility="Collapsed"/>
+                                    <Button Content="📁 Abrir Carpeta de Datos" Height="35" Margin="0,0,0,10" Click="BtnOpenDataFolder_Click" HorizontalAlignment="Stretch"/>
+                                    <Button Content="🔄 Reiniciar Aplicación" Height="35" Click="BtnRestartApp_Click" HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </GroupBox>
-                            
                             <GroupBox Header="Información del Sistema" Visibility="Collapsed">
-                                <TextBox x:Name="txtSystemInfo" IsReadOnly="True" Height="200" 
-                                        TextWrapping="Wrap" AcceptsReturn="True" 
-                                        VerticalScrollBarVisibility="Auto" Background="LightGray"/>
+                                <TextBox x:Name="txtSystemInfo" IsReadOnly="True" Height="200" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="LightGray"/>
                             </GroupBox>
                         </StackPanel>
                     </Grid>
                 </TabItem>
-                
-                <!-- Debug Tab -->
+
                 <TabItem Header="🐛 Debug" FontWeight="Bold" Background="Orange" Visibility="Collapsed">
                     <Grid Margin="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        
                         <GroupBox Grid.Row="0" Header="Controles de Debug" Margin="0,0,0,10">
                             <StackPanel Margin="10">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Button x:Name="btnClearDebug" Content="🗑️ Limpiar" Width="80" Height="30" 
-                                           Click="BtnClearDebug_Click" Margin="0,0,10,0" Background="Red" Foreground="White"/>
-                                    <Button x:Name="btnTestNav" Content="🔄 Test Nav" Width="80" Height="30" 
-                                           Click="BtnTestNav_Click" Margin="0,0,10,0" Background="Blue" Foreground="White"/>
-                                    <Button x:Name="btnCheckBrowser" Content="🔍 Check" Width="80" Height="30" 
-                                           Click="BtnCheckBrowser_Click" Margin="0,0,10,0" Background="Green" Foreground="White"/>
+                                    <Button x:Name="btnClearDebug" Content="🗑️ Limpiar" Width="80" Height="30" Click="BtnClearDebug_Click" Margin="0,0,10,0" Background="Red" Foreground="White"/>
+                                    <Button x:Name="btnTestNav" Content="🔄 Test Nav" Width="80" Height="30" Click="BtnTestNav_Click" Margin="0,0,10,0" Background="Blue" Foreground="White"/>
+                                    <Button x:Name="btnCheckBrowser" Content="🔍 Check" Width="80" Height="30" Click="BtnCheckBrowser_Click" Margin="0,0,10,0" Background="Green" Foreground="White"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="btnForceJava" Content="☕ Force Java" Width="80" Height="30" 
-                                           Click="BtnForceJava_Click" Margin="0,0,5,0" Background="Orange" Foreground="White"/>
-                                    <Button x:Name="btnCheckJavaStatus" Content="✅ Status" Width="60" Height="30" 
-                                           Click="BtnCheckJavaStatus_Click" Margin="0,0,5,0" Background="Purple" Foreground="White"/>
-                                    <Button x:Name="btnFixPermissions" Content="🔧 Fix Perms" Width="80" Height="30" 
-                                           Click="BtnFixPermissions_Click" Margin="0,0,5,0" Background="Red" Foreground="White"/>
-                                    <Button x:Name="btnLaunchJNLP" Content="🚀 JNLP" Width="60" Height="30" 
-                                           Click="BtnLaunchJNLP_Click" Margin="0,0,5,0" Background="DarkBlue" Foreground="White"/>
-                                    <Button x:Name="btnSigemiAuto" Content="🎯 SIGEMI" Width="70" Height="30" 
-                                           Click="BtnSigemiAuto_Click" Background="MediumSeaGreen" Foreground="White" FontWeight="Bold"/>
+                                    <Button x:Name="btnForceJava" Content="☕ Force Java" Width="80" Height="30" Click="BtnForceJava_Click" Margin="0,0,5,0" Background="Orange" Foreground="White"/>
+                                    <Button x:Name="btnCheckJavaStatus" Content="✅ Status" Width="60" Height="30" Click="BtnCheckJavaStatus_Click" Margin="0,0,5,0" Background="Purple" Foreground="White"/>
+                                    <Button x:Name="btnFixPermissions" Content="🔧 Fix Perms" Width="80" Height="30" Click="BtnFixPermissions_Click" Margin="0,0,5,0" Background="Red" Foreground="White"/>
+                                    <Button x:Name="btnLaunchJNLP" Content="🚀 JNLP" Width="60" Height="30" Click="BtnLaunchJNLP_Click" Margin="0,0,5,0" Background="DarkBlue" Foreground="White"/>
+                                    <Button x:Name="btnSigemiAuto" Content="🎯 SIGEMI" Width="70" Height="30" Click="BtnSigemiAuto_Click" Background="MediumSeaGreen" Foreground="White" FontWeight="Bold"/>
                                 </StackPanel>
                             </StackPanel>
                         </GroupBox>
-                        
                         <GroupBox Grid.Row="1" Header="Log de Debug en Tiempo Real">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                
                                 <Border Grid.Row="0" Background="LightYellow" Padding="10" Margin="0,0,0,5">
                                     <TextBlock TextWrapping="Wrap" FontSize="11">
                                         <Run FontWeight="Bold" Foreground="DarkRed">🎯 PROBLEMA IDENTIFICADO:</Run>
@@ -383,18 +295,18 @@
                                         <Run>Usar </Run><Run FontWeight="Bold">"🚀 JNLP"</Run><Run> o navegador externo que puede manejar versiones Java múltiples.</Run>
                                     </TextBlock>
                                 </Border>
-                                
                                 <ScrollViewer Grid.Row="1" x:Name="DebugScrollViewer" VerticalScrollBarVisibility="Auto">
                                     <TextBox x:Name="txtDebugLog" IsReadOnly="True" 
-                                            Background="Black" Foreground="Lime" 
-                                            FontFamily="Consolas" FontSize="11"
-                                            TextWrapping="Wrap" AcceptsReturn="True"
-                                            Text="=== LOG DE DEBUG ===&#x0A;Esperando eventos...&#x0A;"/>
+                                             Background="Black" Foreground="Lime" 
+                                             FontFamily="Consolas" FontSize="11"
+                                             TextWrapping="Wrap" AcceptsReturn="True"
+                                             Text="=== LOG DE DEBUG ===&#x0A;Esperando eventos...&#x0A;"/>
                                 </ScrollViewer>
                             </Grid>
                         </GroupBox>
                     </Grid>
                 </TabItem>
+
             </TabControl>
         </Border>
     </Grid>
