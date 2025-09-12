@@ -178,8 +178,8 @@ namespace PdfExtractor.Models
         private string FormatCurrency(decimal value)
         {
             if (value == 0) return "";
-            // Usar punto como separador de miles y coma como decimal
-            return value.ToString("C2", new CultureInfo("es-AR")).Replace("$", "$ ");
+            // Usar formato colombiano: coma como separador de miles, punto como decimal
+            return value.ToString("C2", new CultureInfo("es-CO")).Replace("$", "$ ");
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

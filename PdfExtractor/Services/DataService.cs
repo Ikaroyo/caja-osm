@@ -112,8 +112,8 @@ namespace PdfExtractor.Services
         private static string FormatCurrency(decimal value)
         {
             if (value == 0) return "";
-            // Usar formato argentino: punto para miles, coma para decimales
-            return value.ToString("C2", new CultureInfo("es-AR")).Replace("$", "$ ");
+            // Usar formato simple sin separadores para JSON (ejemplo: 934472.68)
+            return value.ToString("F2", CultureInfo.InvariantCulture);
         }
 
         private static decimal ParseCurrency(string value)
@@ -123,10 +123,16 @@ namespace PdfExtractor.Services
             // Remover símbolo de moneda y espacios
             string cleanValue = value.Replace("$", "").Replace(" ", "").Trim();
             
-            // Manejar formato argentino: 1.234.567,89
+            // Si el valor viene del JSON (formato simple: 934472.68)
+            if (decimal.TryParse(cleanValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var simpleResult))
+            {
+                return simpleResult;
+            }
+            
+            // Fallback: Manejar formato con separadores
             if (cleanValue.Contains(".") && cleanValue.Contains(","))
             {
-                // Remover puntos (separadores de miles) y reemplazar coma por punto
+                // Formato argentino: 1.234.567,89 -> remover puntos y cambiar coma por punto
                 cleanValue = cleanValue.Replace(".", "").Replace(",", ".");
             }
             else if (cleanValue.Contains(",") && !cleanValue.Contains("."))

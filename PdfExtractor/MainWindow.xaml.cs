@@ -1,14 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Linq;
 using Microsoft.Win32;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
@@ -25,15 +27,15 @@ namespace PdfExtractor
         private const string BASE_URL = "http://192.168.100.80:7778/reports/rwservlet/getjobid{0}?SERVER=rep_vmo_bck";
         private const string SIGEMI_URL = "http://192.168.100.80:7778/forms/frmservlet?config=sigemi-vmo";
         private const string NOTES_FILE = "quick_notes.txt";
+        private const string CONFIG_FILE = "arqueo_config.txt";
         private string currentPdfContent = "";
-        private byte[] currentPdfData;
-
-        // Variables para la calculadora
-        private string currentInput = "0";
-        private string operation = "";
-        private decimal firstOperand = 0;
-        private bool isNewEntry = true;
-        private StringBuilder calculatorHistory = new StringBuilder();
+        private byte[]? currentPdfData;
+        
+        // Calculator variables
+        private double calculatorResult = 0;
+        private double calculatorOperand = 0;
+        private string calculatorOperation = "";
+        private bool isNewCalculation = true;
         
         // Variables para el navegador web
 
@@ -90,11 +92,31 @@ namespace PdfExtractor
             // Cargar notas rápidas guardadas
             LoadQuickNotes();
             
+            // Cargar configuración guardada
+            LoadArqueoConfig();
+            
+            // Delay para asegurar que todos los controles estén inicializados
+            Dispatcher.BeginInvoke(new Action(() => {
+                CalculateExpectedTotal();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+            
             // Inicializar formulario de datos extraídos
             ClearExtractedDataForm();
             
             // EJECUTAR PRUEBAS CON DATOS DE REFERENCIA
             TestAllPdfsWithReferenceData();
+            
+            // Inicializar cálculo de arqueo después de que la ventana esté cargada
+            Dispatcher.BeginInvoke(new Action(() => {
+                try
+                {
+                    CalculateExpectedTotal();
+                }
+                catch (Exception ex)
+                {
+                    LogDebug($"Error en inicialización de arqueo: {ex.Message}");
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private void ExecuteDebugExtraction()
@@ -1371,156 +1393,6 @@ namespace PdfExtractor
             }
         }
 
-        // Eventos de la calculadora
-        private void Calculator_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                string buttonContent = button.Content.ToString() ?? "";
-                ProcessCalculatorInput(buttonContent);
-            }
-        }
-
-        private void ProcessCalculatorInput(string input)
-        {
-            try
-            {
-                string previousDisplay = txtCalculatorDisplay.Text;
-                
-                switch (input)
-                {
-                    case "C":
-                        currentInput = "0";
-                        operation = "";
-                        firstOperand = 0;
-                        isNewEntry = true;
-                        calculatorHistory.AppendLine($"Limpiar todo");
-                        break;
-                        
-                    case "CE":
-                        currentInput = "0";
-                        isNewEntry = true;
-                        break;
-                        
-                    case "←":
-                        if (currentInput.Length > 1)
-                            currentInput = currentInput.Substring(0, currentInput.Length - 1);
-                        else
-                            currentInput = "0";
-                        break;
-                        
-                    case "+":
-                    case "-":
-                    case "×":
-                    case "÷":
-                        if (!string.IsNullOrEmpty(operation) && !isNewEntry)
-                        {
-                            CalculateResult();
-                        }
-                        firstOperand = decimal.Parse(currentInput.Replace(",", "."), CultureInfo.InvariantCulture);
-                        operation = input;
-                        isNewEntry = true;
-                        break;
-                        
-                    case "=":
-                        if (!string.IsNullOrEmpty(operation))
-                        {
-                            decimal secondOperand = decimal.Parse(currentInput.Replace(",", "."), CultureInfo.InvariantCulture);
-                            string calculation = $"{firstOperand} {operation} {secondOperand} = ";
-                            CalculateResult();
-                            calculation += currentInput;
-                            calculatorHistory.AppendLine(calculation);
-                            UpdateCalculatorHistory();
-                        }
-                        operation = "";
-                        isNewEntry = true;
-                        break;
-                        
-                    case ",":
-                        if (!currentInput.Contains(","))
-                            currentInput += ",";
-                        isNewEntry = false;
-                        break;
-                        
-                    default: // Números
-                        if (isNewEntry)
-                        {
-                            currentInput = input;
-                            isNewEntry = false;
-                        }
-                        else
-                        {
-                            if (currentInput == "0")
-                                currentInput = input;
-                            else
-                                currentInput += input;
-                        }
-                        break;
-                }
-                
-                txtCalculatorDisplay.Text = FormatCalculatorDisplay(currentInput);
-            }
-            catch (Exception ex)
-            {
-                txtCalculatorDisplay.Text = "Error";
-                System.Diagnostics.Debug.WriteLine($"Calculator error: {ex.Message}");
-            }
-        }
-
-        private void UpdateCalculatorHistory()
-        {
-            var historyLines = calculatorHistory.ToString().Split('\n');
-            var recentHistory = historyLines.Reverse().Take(10).Reverse().Where(line => !string.IsNullOrWhiteSpace(line));
-            txtCalculatorHistory.Text = string.Join(Environment.NewLine, recentHistory);
-        }
-
-        private void CalculateResult()
-        {
-            try
-            {
-                decimal secondOperand = decimal.Parse(currentInput.Replace(",", "."), CultureInfo.InvariantCulture);
-                decimal result = 0;
-
-                switch (operation)
-                {
-                    case "+":
-                        result = firstOperand + secondOperand;
-                        break;
-                    case "-":
-                        result = firstOperand - secondOperand;
-                        break;
-                    case "×":
-                        result = firstOperand * secondOperand;
-                        break;
-                    case "÷":
-                        if (secondOperand != 0)
-                            result = firstOperand / secondOperand;
-                        else
-                        {
-                            txtCalculatorDisplay.Text = "Error";
-                            return;
-                        }
-                        break;
-                }
-
-                currentInput = result.ToString("F2", CultureInfo.InvariantCulture).Replace(".", ",");
-                firstOperand = result;
-            }
-            catch
-            {
-                txtCalculatorDisplay.Text = "Error";
-            }
-        }
-
-        private string FormatCalculatorDisplay(string value)
-        {
-            if (decimal.TryParse(value.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal number))
-            {
-                return number.ToString("N2", new CultureInfo("es-AR"));
-            }
-            return value;
-        }
-
         // Métodos para debug
         private void DebugButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1945,6 +1817,67 @@ namespace PdfExtractor
                 LogDebug($"Error guardando notas: {ex.Message}");
             }
         }
+        
+        private void LoadArqueoConfig()
+        {
+            try
+            {
+                if (File.Exists(CONFIG_FILE))
+                {
+                    var configData = File.ReadAllText(CONFIG_FILE);
+                    using (var doc = System.Text.Json.JsonDocument.Parse(configData))
+                    {
+                        var root = doc.RootElement;
+                        
+                        // Cargar valores guardados
+                        if (root.TryGetProperty("CajaSeleccionada", out var cajaElement))
+                        {
+                            string caja = cajaElement.GetString() ?? "";
+                            for (int i = 0; i < cmbCajaSelection.Items.Count; i++)
+                            {
+                                if (cmbCajaSelection.Items[i] is ComboBoxItem item && item.Content.ToString() == caja)
+                                {
+                                    cmbCajaSelection.SelectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                            
+                        if (root.TryGetProperty("FechaInicio", out var fechaElement))
+                        {
+                            if (DateTime.TryParse(fechaElement.GetString(), out DateTime fecha))
+                                dpFechaInicial.SelectedDate = fecha;
+                        }
+                        
+                        if (root.TryGetProperty("LoteHoy", out var loteElement))
+                            txtLoteHoy.Text = loteElement.GetString() ?? "";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error cargando configuración: {ex.Message}");
+            }
+        }
+
+        private void SaveArqueoConfig()
+        {
+            try
+            {
+                var config = new
+                {
+                    CajaSeleccionada = cmbCajaSelection.SelectedItem is ComboBoxItem selected ? selected.Content.ToString() : "",
+                    FechaInicio = dpFechaInicial.SelectedDate?.ToString("yyyy-MM-dd"),
+                    LoteHoy = txtLoteHoy.Text
+                };
+                
+                File.WriteAllText(CONFIG_FILE, System.Text.Json.JsonSerializer.Serialize(config));
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error guardando configuración: {ex.Message}");
+            }
+        }
 
         private void BtnPrint_Click(object sender, RoutedEventArgs e)
         {
@@ -1995,6 +1928,740 @@ namespace PdfExtractor
             
             httpClient?.Dispose();
             base.OnClosed(e);
+        }
+
+        private void DatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Delay calculation to ensure both date pickers are updated
+            Dispatcher.BeginInvoke(new Action(() => {
+                CalculateExpectedTotal();
+                SaveArqueoConfig();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        private void CmbCajaSelection_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Delay calculation to ensure selection is fully updated
+            Dispatcher.BeginInvoke(new Action(() => {
+                CalculateExpectedTotal();
+                SaveArqueoConfig();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        private void CashCount_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                CalculateCashDenomination(textBox);
+            }
+            CalculateTotals();
+        }
+
+        private void CalculateCashDenomination(TextBox countTextBox)
+        {
+            try
+            {
+                // Determinar qué denominación es basándose en el nombre del control
+                string controlName = countTextBox.Name;
+                int denomination = 0;
+                TextBox totalTextBox = null;
+
+                switch (controlName)
+                {
+                    case "txt20000Count":
+                        denomination = 20000;
+                        totalTextBox = txt20000Total;
+                        break;
+                    case "txt10000Count":
+                        denomination = 10000;
+                        totalTextBox = txt10000Total;
+                        break;
+                    case "txt2000Count":
+                        denomination = 2000;
+                        totalTextBox = txt2000Total;
+                        break;
+                    case "txt1000Count":
+                        denomination = 1000;
+                        totalTextBox = txt1000Total;
+                        break;
+                    case "txt500Count":
+                        denomination = 500;
+                        totalTextBox = txt500Total;
+                        break;
+                    case "txt200Count":
+                        denomination = 200;
+                        totalTextBox = txt200Total;
+                        break;
+                    case "txt100Count":
+                        denomination = 100;
+                        totalTextBox = txt100Total;
+                        break;
+                }
+
+                if (totalTextBox != null)
+                {
+                    double count = EvaluateCountExpression(countTextBox.Text);
+                    if (count >= 0) // Valid expression
+                    {
+                        decimal total = (decimal)count * denomination;
+                        totalTextBox.Text = $"$ {FormatColombianCurrency(total)}";
+                    }
+                    else
+                    {
+                        totalTextBox.Text = "$ 0";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error calculando denominación: {ex.Message}");
+            }
+        }
+
+        private void CalculateTotals()
+        {
+            try
+            {
+                decimal totalEfectivo = 0;
+
+                // Sumar todos los totales de denominaciones
+                totalEfectivo += GetDenominationTotal(txt20000Total);
+                totalEfectivo += GetDenominationTotal(txt10000Total);
+                totalEfectivo += GetDenominationTotal(txt2000Total);
+                totalEfectivo += GetDenominationTotal(txt1000Total);
+                totalEfectivo += GetDenominationTotal(txt500Total);
+                totalEfectivo += GetDenominationTotal(txt200Total);
+                totalEfectivo += GetDenominationTotal(txt100Total);
+
+                // Agregar valores adicionales
+                totalEfectivo += GetValueFromTextBox(txtValor1);
+                totalEfectivo += GetValueFromTextBox(txtValor2);
+                totalEfectivo += GetValueFromTextBox(txtValor3);
+                totalEfectivo += GetValueFromTextBox(txtValor4);
+                totalEfectivo += GetValueFromTextBox(txtValor5);
+
+                // Actualizar total contado
+                txtTotalContado.Text = $"$ {FormatColombianCurrency(totalEfectivo)}";
+
+                // Calcular diferencia
+                decimal esperado = GetValueFromTextBox(txtTotalEsperado);
+                decimal diferencia = totalEfectivo - esperado;
+                txtDiferencia.Text = $"$ {FormatColombianCurrency(diferencia)}";
+
+                // Cambiar color de diferencia según el resultado
+                if (diferencia == 0)
+                {
+                    txtDiferencia.Background = System.Windows.Media.Brushes.LightGreen;
+                }
+                else if (diferencia > 0)
+                {
+                    txtDiferencia.Background = System.Windows.Media.Brushes.LightBlue;
+                }
+                else
+                {
+                    txtDiferencia.Background = System.Windows.Media.Brushes.LightCoral;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error calculando totales: {ex.Message}");
+            }
+        }
+
+        private decimal GetDenominationTotal(TextBox totalTextBox)
+        {
+            try
+            {
+                string text = totalTextBox.Text.Replace("$", "").Trim();
+                // Manejar formato colombiano: 1,234,567.89
+                if (text.Contains(",") && text.Contains("."))
+                {
+                    // Remover comas (separadores de miles) y mantener punto decimal
+                    text = text.Replace(",", "");
+                }
+                else if (text.Contains(",") && !text.Contains("."))
+                {
+                    // Si solo hay coma y no punto, podría ser decimal español
+                    // Asumir que es separador de miles si el número es grande
+                    if (text.Length > 4) // Ejemplo: 20,000
+                    {
+                        text = text.Replace(",", "");
+                    }
+                    else // Ejemplo: 12,50
+                    {
+                        text = text.Replace(",", ".");
+                    }
+                }
+                return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private decimal GetValueFromTextBox(TextBox textBox)
+        {
+            try
+            {
+                string text = textBox.Text.Replace("$", "").Trim();
+                
+                // First try to evaluate as expression
+                double evaluatedValue = EvaluateCountExpression(text);
+                if (evaluatedValue >= 0) // Valid expression
+                {
+                    return (decimal)evaluatedValue;
+                }
+                
+                // If not a valid expression, try original parsing logic
+                // Manejar formato colombiano: 1,234,567.89
+                if (text.Contains(",") && text.Contains("."))
+                {
+                    // Remover comas (separadores de miles) y mantener punto decimal
+                    text = text.Replace(",", "");
+                }
+                else if (text.Contains(",") && !text.Contains("."))
+                {
+                    // Si solo hay coma y no punto, podría ser decimal español
+                    // Asumir que es separador de miles si el número es grande
+                    if (text.Length > 4) // Ejemplo: 20,000
+                    {
+                        text = text.Replace(",", "");
+                    }
+                    else // Ejemplo: 12,50
+                    {
+                        text = text.Replace(",", ".");
+                    }
+                }
+                return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private void CalculateExpectedTotal()
+        {
+            try
+            {
+                // Verificar que todos los controles estén disponibles
+                if (dpFechaInicial == null || dpFechaFinal == null || cmbCajaSelection == null || txtTotalEsperado == null || txtLoteHoy == null)
+                {
+                    LogDebug("Controles no están inicializados aún");
+                    return;
+                }
+
+                if (dpFechaInicial.SelectedDate == null || dpFechaFinal.SelectedDate == null || cmbCajaSelection.SelectedItem == null)
+                {
+                    LogDebug("Fechas o caja no seleccionadas completamente");
+                    txtTotalEsperado.Text = "0.00";
+                    return;
+                }
+
+                DateTime fechaInicial = dpFechaInicial.SelectedDate.Value;
+                DateTime fechaFinal = dpFechaFinal.SelectedDate.Value;
+                
+                // Validar que la fecha inicial no sea mayor que la final
+                if (fechaInicial > fechaFinal)
+                {
+                    LogDebug("Fecha inicial es mayor que fecha final");
+                    txtTotalEsperado.Text = "0.00";
+                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightPink;
+                    return;
+                }
+                else
+                {
+                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
+                }
+
+                string cajaSeleccionada = ((ComboBoxItem)cmbCajaSelection.SelectedItem).Content.ToString() ?? "";
+
+                LogDebug($"Iniciando cálculo: {fechaInicial:dd/MM/yyyy} - {fechaFinal:dd/MM/yyyy} para {cajaSeleccionada}");
+                
+                // Calcular total esperado desde los datos guardados
+                decimal totalEsperado = CalculateExpectedCashFromData(fechaInicial, fechaFinal, cajaSeleccionada);
+                
+                // Agregar el valor de Lote de Hoy
+                decimal loteHoyValue = GetValueFromTextBox(txtLoteHoy);
+                totalEsperado += loteHoyValue;
+                
+                // Actualizar display
+                txtTotalEsperado.Text = FormatColombianCurrency(totalEsperado);
+                LogDebug($"Total esperado actualizado: ${FormatColombianCurrency(totalEsperado)} (incluye Lote de Hoy: ${FormatColombianCurrency(loteHoyValue)})");
+                
+                // Recalcular diferencia
+                CalculateTotals();
+                
+                // Actualizar color de fondo basado en si hay datos
+                if (totalEsperado > 0)
+                {
+                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightGreen;
+                }
+                else
+                {
+                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error calculando total esperado: {ex.Message}");
+                if (txtTotalEsperado != null)
+                {
+                    txtTotalEsperado.Text = "Error";
+                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightCoral;
+                }
+            }
+        }
+
+        private decimal CalculateExpectedCashFromData(DateTime fechaInicial, DateTime fechaFinal, string caja)
+        {
+            try
+            {
+                LogDebug($"Calculando total esperado para {caja} desde {fechaInicial:dd/MM/yyyy} hasta {fechaFinal:dd/MM/yyyy}");
+                
+                // Obtener configuración para ubicación de datos
+                var config = AppConfig.Load();
+                if (string.IsNullOrEmpty(config.SaveLocation))
+                {
+                    LogDebug("No hay ubicación de guardado configurada");
+                    return 0;
+                }
+
+                // Cargar datos guardados
+                var allData = DataService.LoadData(config.SaveLocation);
+                LogDebug($"Datos cargados: {allData.Count} lotes encontrados");
+                
+                if (allData.Count == 0)
+                {
+                    LogDebug("No hay datos guardados para calcular");
+                    return 0;
+                }
+
+                // Filtrar por fechas
+                var filteredByDate = allData.Where(lote => 
+                    lote.Fecha.Date >= fechaInicial.Date && 
+                    lote.Fecha.Date <= fechaFinal.Date).ToList();
+                
+                LogDebug($"Después de filtrar por fechas: {filteredByDate.Count} lotes");
+
+                // Filtrar por caja si no es "Ambas Cajas"
+                List<LoteData> filteredData;
+                if (caja == "Ambas Cajas")
+                {
+                    filteredData = filteredByDate;
+                    LogDebug("Incluyendo ambas cajas");
+                }
+                else
+                {
+                    // Normalizar nombre de caja para comparación
+                    string cajaToMatch = caja.ToUpper().Replace(" ", "");
+                    filteredData = filteredByDate.Where(lote => 
+                        lote.Caja.ToUpper().Replace(" ", "") == cajaToMatch ||
+                        lote.Caja.ToUpper().Contains(cajaToMatch)).ToList();
+                    
+                    LogDebug($"Después de filtrar por caja '{caja}': {filteredData.Count} lotes");
+                }
+
+                // Sumar todos los efectivos
+                decimal totalEfectivo = filteredData.Sum(lote => lote.Efectivo);
+                
+                LogDebug($"Total efectivo calculado: ${totalEfectivo.ToString("N2", new CultureInfo("es-CO"))}");
+                
+                // Mostrar detalles en debug
+                if (filteredData.Count > 0)
+                {
+                    LogDebug("Detalle de lotes incluidos:");
+                    foreach (var lote in filteredData.OrderBy(l => l.Fecha))
+                    {
+                        LogDebug($"  - {lote.FechaString} | {lote.Lote} | {lote.Caja} | Efectivo: ${lote.Efectivo.ToString("N2", new CultureInfo("es-CO"))}");
+                    }
+                }
+                else
+                {
+                    LogDebug("No se encontraron lotes que cumplan los criterios");
+                }
+                
+                return totalEfectivo;
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error calculando total esperado desde datos: {ex.Message}");
+                LogDebug($"StackTrace: {ex.StackTrace}");
+                return 0;
+            }
+        }
+
+        private void BtnLimpiarCalculadora_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Limpiar todos los campos de cantidad
+                txt20000Count.Text = "0";
+                txt10000Count.Text = "0";
+                txt2000Count.Text = "0";
+                txt1000Count.Text = "0";
+                txt500Count.Text = "0";
+                txt200Count.Text = "0";
+                txt100Count.Text = "0";
+
+                // Limpiar valores adicionales
+                txtValor1.Text = "0";
+                txtValor2.Text = "0";
+                txtValor3.Text = "0";
+                txtValor4.Text = "0";
+                txtValor5.Text = "0";
+
+                // Esto automáticamente disparará el recálculo de totales
+                CalculateTotals();
+
+                LogDebug("Calculadora de arqueo limpiada");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error limpiando calculadora: {ex.Message}");
+            }
+        }
+
+        private void BtnActualizarTotal_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                LogDebug("Botón actualizar total presionado - forzando recálculo");
+                CalculateExpectedTotal();
+                
+                // Mostrar mensaje informativo si no hay datos
+                var config = AppConfig.Load();
+                if (string.IsNullOrEmpty(config.SaveLocation))
+                {
+                    MessageBox.Show("Debe configurar una ubicación de guardado primero.\nVaya a Configuración → Config para establecer la carpeta de datos.", 
+                        "Configuración Requerida", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                
+                var data = DataService.LoadData(config.SaveLocation);
+                if (data.Count == 0)
+                {
+                    MessageBox.Show("No se encontraron datos guardados para calcular el total esperado.\nPrimero debe procesar algunos PDFs para generar datos.", 
+                        "Sin Datos", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    LogDebug($"Total actualizado con {data.Count} lotes en la base de datos");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error actualizando total: {ex.Message}");
+                MessageBox.Show($"Error actualizando total: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void AdditionalValue_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            CalculateTotals();
+        }
+
+        private void LoteHoy_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                var result = EvaluateCountExpression(textBox.Text);
+                if (result > 0) // Valid expression
+                {
+                    textBox.ToolTip = $"= {FormatColombianCurrency((decimal)result)}";
+                }
+                else
+                {
+                    textBox.ToolTip = null;
+                }
+            }
+            
+            // Recalcular el total esperado (que incluye el lote de hoy)
+            CalculateExpectedTotal();
+            SaveArqueoConfig();
+        }
+
+        private string FormatColombianCurrency(decimal value)
+        {
+            // Formatear solo con comas como separadores de miles, sin puntos
+            // Para enteros, no mostrar decimales
+            if (value == Math.Floor(value))
+            {
+                return value.ToString("#,##0", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                // Para decimales, usar coma como decimal
+                return value.ToString("#,##0.00", CultureInfo.InvariantCulture).Replace(".", ",");
+            }
+        }
+
+        // Calculator functionality
+        private void BtnCalc_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                string buttonContent = button.Content.ToString();
+                
+                switch (buttonContent)
+                {
+                    case "C":
+                        ClearCalculator();
+                        break;
+                    case "±":
+                        ToggleSign();
+                        break;
+                    case "=":
+                        PerformCalculation();
+                        break;
+                    case "+":
+                    case "-":
+                    case "×":
+                    case "÷":
+                    case "%":
+                        SetOperation(buttonContent);
+                        break;
+                    case ",":
+                        AddDecimalPoint();
+                        break;
+                    default:
+                        AddDigit(buttonContent);
+                        break;
+                }
+            }
+        }
+
+        private void ClearCalculator()
+        {
+            calculatorResult = 0;
+            calculatorOperand = 0;
+            calculatorOperation = "";
+            isNewCalculation = true;
+            txtCalculatorDisplay.Text = "0";
+        }
+
+        private void AddDigit(string digit)
+        {
+            if (isNewCalculation)
+            {
+                txtCalculatorDisplay.Text = digit;
+                isNewCalculation = false;
+            }
+            else
+            {
+                if (txtCalculatorDisplay.Text == "0")
+                    txtCalculatorDisplay.Text = digit;
+                else
+                    txtCalculatorDisplay.Text += digit;
+            }
+        }
+
+        private void AddDecimalPoint()
+        {
+            if (isNewCalculation)
+            {
+                txtCalculatorDisplay.Text = "0,";
+                isNewCalculation = false;
+            }
+            else if (!txtCalculatorDisplay.Text.Contains(","))
+            {
+                txtCalculatorDisplay.Text += ",";
+            }
+        }
+
+        private void ToggleSign()
+        {
+            if (double.TryParse(txtCalculatorDisplay.Text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+            {
+                value = -value;
+                txtCalculatorDisplay.Text = value.ToString("0.##", CultureInfo.InvariantCulture).Replace(".", ",");
+            }
+        }
+
+        private void SetOperation(string operation)
+        {
+            if (double.TryParse(txtCalculatorDisplay.Text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+            {
+                if (!string.IsNullOrEmpty(calculatorOperation) && !isNewCalculation)
+                {
+                    PerformCalculation();
+                }
+                
+                calculatorResult = value;
+                calculatorOperation = operation;
+                isNewCalculation = true;
+            }
+        }
+
+        private void PerformCalculation()
+        {
+            if (double.TryParse(txtCalculatorDisplay.Text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double operand))
+            {
+                double result = calculatorResult;
+                
+                switch (calculatorOperation)
+                {
+                    case "+":
+                        result = calculatorResult + operand;
+                        break;
+                    case "-":
+                        result = calculatorResult - operand;
+                        break;
+                    case "×":
+                        result = calculatorResult * operand;
+                        break;
+                    case "÷":
+                        result = operand != 0 ? calculatorResult / operand : 0;
+                        break;
+                    case "%":
+                        result = calculatorResult % operand;
+                        break;
+                }
+                
+                txtCalculatorDisplay.Text = result.ToString("0.##", CultureInfo.InvariantCulture).Replace(".", ",");
+                calculatorResult = result;
+                calculatorOperation = "";
+                isNewCalculation = true;
+            }
+        }
+
+        // Expression evaluation methods
+        private void TxtCalculatorDisplay_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                EvaluateExpression();
+                e.Handled = true;
+            }
+        }
+
+        private void TxtCalculatorDisplay_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Reset calculator state when user starts typing
+            if (!isNewCalculation)
+            {
+                calculatorResult = 0;
+                calculatorOperand = 0;
+                calculatorOperation = "";
+                isNewCalculation = true;
+            }
+        }
+
+        private void BtnEvaluateExpression_Click(object sender, RoutedEventArgs e)
+        {
+            EvaluateExpression();
+        }
+
+        private void EvaluateExpression()
+        {
+            try
+            {
+                string expression = txtCalculatorDisplay.Text.Trim();
+                
+                if (string.IsNullOrEmpty(expression) || expression == "0")
+                    return;
+
+                // Replace × and ÷ with * and /
+                expression = expression.Replace("×", "*").Replace("÷", "/");
+                
+                // Replace comma decimal separator with period for calculation
+                expression = expression.Replace(",", ".");
+                
+                // Evaluate the expression
+                double result = EvaluateMathExpression(expression);
+                
+                // Display result with Colombian format
+                txtCalculatorDisplay.Text = result.ToString("0.##", CultureInfo.InvariantCulture).Replace(".", ",");
+                
+                // Update calculator state
+                calculatorResult = result;
+                calculatorOperation = "";
+                isNewCalculation = true;
+            }
+            catch (Exception ex)
+            {
+                txtCalculatorDisplay.Text = "Error: " + ex.Message;
+                LogDebug($"Calculator error: {ex.Message}");
+            }
+        }
+
+        private double EvaluateMathExpression(string expression)
+        {
+            // Simple math expression evaluator
+            // Supports: +, -, *, /, (, ), numbers
+            
+            try
+            {
+                // Remove any spaces
+                expression = expression.Replace(" ", "");
+                
+                // Validate expression contains only valid characters
+                if (!System.Text.RegularExpressions.Regex.IsMatch(expression, @"^[0-9+\-*/().]+$"))
+                {
+                    throw new ArgumentException("Expresión contiene caracteres inválidos");
+                }
+                
+                // Use DataTable.Compute for simple expression evaluation
+                var table = new System.Data.DataTable();
+                var result = table.Compute(expression, null);
+                
+                if (result == DBNull.Value)
+                    throw new ArgumentException("Expresión inválida");
+                
+                return Convert.ToDouble(result);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Error evaluando expresión: {ex.Message}");
+            }
+        }
+
+        private double EvaluateCountExpression(string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                    return 0;
+
+                // Remove spaces
+                input = input.Trim().Replace(" ", "");
+
+                // If it's just a simple number, parse it directly
+                if (double.TryParse(input, out double simpleNumber))
+                {
+                    return simpleNumber;
+                }
+
+                // Check if it contains mathematical expressions
+                if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^[0-9+\-*/().]+$"))
+                {
+                    try
+                    {
+                        // Use DataTable.Compute for expression evaluation
+                        var table = new System.Data.DataTable();
+                        var result = table.Compute(input, null);
+                        
+                        if (result != DBNull.Value && double.TryParse(result.ToString(), out double evalResult))
+                        {
+                            return Math.Max(0, evalResult); // Ensure non-negative result
+                        }
+                    }
+                    catch
+                    {
+                        // If evaluation fails, return -1 to indicate error
+                        return -1;
+                    }
+                }
+
+                // If it's not a valid expression, return -1 to indicate error
+                return -1;
+            }
+            catch
+            {
+                return -1;
+            }
         }
     }
 }

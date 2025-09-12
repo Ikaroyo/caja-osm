@@ -1,0 +1,1 @@
+{"CajaSeleccionada":"Caja 1","FechaInicio":"2025-09-01","LoteHoy":"5000000"}
