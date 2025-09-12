@@ -29,45 +29,44 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
-                <RowDefinition Height="35"/>
-                <RowDefinition Height="35"/>
             </Grid.RowDefinitions>
             
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Día:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="0" Grid.Column="1" x:Name="txtDia" Text="{Binding Dia}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Fecha:" VerticalAlignment="Center"/>
-            <DatePicker Grid.Row="1" Grid.Column="1" x:Name="dpFecha" SelectedDate="{Binding Fecha}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Lote:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" x:Name="txtLote" Text="{Binding Lote}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Usuario:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="3" Grid.Column="1" x:Name="txtUsuario" Text="{Binding Usuario}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="OSM:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="4" Grid.Column="1" x:Name="txtOSM" Text="{Binding OSM}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="5" Grid.Column="0" Text="MUNI:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="5" Grid.Column="1" x:Name="txtMUNI" Text="{Binding MUNI}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="6" Grid.Column="0" Text="Crédito:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="6" Grid.Column="1" x:Name="txtCredito" Text="{Binding Credito}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="7" Grid.Column="0" Text="Débito:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="7" Grid.Column="1" x:Name="txtDebito" Text="{Binding Debito}" Margin="5,0,0,0" Height="25"/>
-            
-            <TextBlock Grid.Row="8" Grid.Column="0" Text="Cheque:" VerticalAlignment="Center"/>
-            <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0">
-                <TextBox x:Name="txtCheque" Text="{Binding Cheque}" Width="150" Height="25"/>
-                <CheckBox x:Name="chkIngresarCheque" Content="Ingresar manualmente" VerticalAlignment="Center" Margin="10,0,0,0" Checked="ChkIngresarCheque_Checked"/>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Día y Fecha:" VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0">
+                <TextBox x:Name="txtDia" Text="{Binding Dia}" Width="50" Height="25" Margin="0,0,10,0"/>
+                <DatePicker x:Name="dpFecha" SelectedDate="{Binding Fecha}" Height="25"/>
             </StackPanel>
             
-            <TextBlock Grid.Row="9" Grid.Column="0" Text="Créd + Déb:" VerticalAlignment="Center" FontWeight="Bold"/>
-            <TextBox Grid.Row="9" Grid.Column="1" x:Name="txtCreditoDebito" Text="{Binding CreditoDebitoFormatted, Mode=OneWay}" Margin="5,0,0,0" Height="25" IsReadOnly="True" Background="LightYellow"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Lote:" VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0">
+                <TextBox x:Name="txtLote" Text="{Binding Lote}" Width="150" Height="25"/>
+                <TextBlock Text="Usuario:" VerticalAlignment="Center" Margin="20,0,5,0"/>
+                <TextBox x:Name="txtUsuario" Text="{Binding Usuario}" Width="150" Height="25"/>
+            </StackPanel>
             
-            <TextBlock Grid.Row="10" Grid.Column="0" Text="Efectivo:" VerticalAlignment="Center" FontWeight="Bold"/>
-            <TextBox Grid.Row="10" Grid.Column="1" x:Name="txtEfectivo" Text="{Binding EfectivoFormatted, Mode=OneWay}" Margin="5,0,0,0" Height="25" IsReadOnly="True" Background="LightGray"/>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="OSM:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="2" Grid.Column="1" x:Name="txtOSM" Text="{Binding OSM}" Margin="5,0,0,0" Height="25"/>
+            
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="MUNI:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="3" Grid.Column="1" x:Name="txtMUNI" Text="{Binding MUNI}" Margin="5,0,0,0" Height="25"/>
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Crédito:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="4" Grid.Column="1" x:Name="txtCredito" Text="{Binding Credito}" Margin="5,0,0,0" Height="25"/>
+
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Débito:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="5" Grid.Column="1" x:Name="txtDebito" Text="{Binding Debito}" Margin="5,0,0,0" Height="25"/>
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="Créd + Déb:" VerticalAlignment="Center" FontWeight="Bold"/>
+            <TextBox Grid.Row="6" Grid.Column="1" x:Name="txtCreditoDebito" Text="{Binding CreditoDebitoFormatted, Mode=OneWay}" Margin="5,0,0,0" Height="25" IsReadOnly="True" Background="LightYellow"/>
+            <TextBlock Grid.Row="7" Grid.Column="0" Text="Cheque:" VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0">
+                <TextBox x:Name="txtCheque" Text="{Binding Cheque}" Width="150" Height="25" KeyUp="TxtCheque_KeyUp"/>
+                <CheckBox Visibility="Hidden" x:Name="chkIngresarCheque" Content="Ingresar manualmente" VerticalAlignment="Center" Margin="10,0,0,0" Checked="ChkIngresarCheque_Checked"/>
+            </StackPanel>
+            
+
+            
+            <TextBlock Grid.Row="8" Grid.Column="0" Text="Efectivo:" VerticalAlignment="Center" FontWeight="Bold"/>
+            <TextBox Grid.Row="8" Grid.Column="1" x:Name="txtEfectivo" Text="{Binding EfectivoFormatted, Mode=OneWay}" Margin="5,0,0,0" Height="25" IsReadOnly="True" Background="LightGray"/>
         </Grid>
         
         <GroupBox Grid.Row="2" Header="Observaciones" Margin="0,15,0,0" Height="100">

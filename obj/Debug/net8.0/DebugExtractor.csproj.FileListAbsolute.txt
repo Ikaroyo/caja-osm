@@ -1,0 +1,6 @@
+D:\Users\Ikaros\Desktop\control-caja-osm\obj\Debug\net8.0\DebugExtractor.csproj.AssemblyReference.cache
+D:\Users\Ikaros\Desktop\control-caja-osm\obj\Debug\net8.0\DebugExtractor.GeneratedMSBuildEditorConfig.editorconfig
+D:\Users\Ikaros\Desktop\control-caja-osm\obj\Debug\net8.0\DebugExtractor.AssemblyInfoInputs.cache
+D:\Users\Ikaros\Desktop\control-caja-osm\obj\Debug\net8.0\DebugExtractor.AssemblyInfo.cs
+D:\Users\Ikaros\Desktop\control-caja-osm\obj\Debug\net8.0\DebugExtractor.csproj.CoreCompileInputs.cache
+D:\Users\Ikaros\Desktop\control-caja-osm\obj\Debug\net8.0\DebugExtractor.sourcelink.json

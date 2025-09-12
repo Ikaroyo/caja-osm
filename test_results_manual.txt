@@ -1,0 +1,12 @@
+﻿Archivo: getjobid484197.pdf
+Esperado - Lote: 403279116, OSM: 1478575.98, MUNI: 33016.1, Usuario: CMAGALLANES
+---
+Archivo: getjobid485764.pdf
+Esperado - Lote: 403279119, OSM: 3243111.06, MUNI: 234994.47, Usuario: FGONZALEZ
+---
+Archivo: getjobid485763.pdf
+Esperado - Lote: 403279120, OSM: 5159825.54, MUNI: 223836.74, Usuario: SCRESPO
+---
+Archivo: getjobid485773.pdf
+Esperado - Lote: 403279121, OSM: 6154845.11, MUNI: 356596.81, Usuario: FGONZALEZ
+---

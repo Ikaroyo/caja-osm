@@ -23,7 +23,7 @@ namespace PdfExtractor.Windows
                 chkCaja2.IsChecked = (config.CajaSeleccionada == "CAJA 2");
                 
                 // Si no hay cheque, mostrar opción para ingreso manual
-                if (Data.Cheque == 0)
+                if (Data.Cheque == 0 || true)
                 {
                     chkIngresarCheque.IsChecked = true;
                     txtCheque.IsEnabled = true;
@@ -87,6 +87,18 @@ namespace PdfExtractor.Windows
         {
             DialogResult = false;
             Close();
+        }
+
+        private void TxtCheque_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (decimal.TryParse(txtCheque.Text, out var chequeValue))
+            {
+                Data.Cheque = chequeValue;
+            }
+            else
+            {
+                Data.Cheque = 0;
+            }
         }
     }
 }

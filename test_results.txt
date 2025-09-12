@@ -1,0 +1,19 @@
+=== RESULTADOS DE PRUEBAS DE EXTRACCIÓN ===
+Fecha: 11/9/2025 23:18:17
+
+Probando archivo: getjobid484197.pdf
+Valores esperados - Lote: 403279116, OSM: 1478575,98, MUNI: 33016,1, Usuario: CMAGALLANES
+ARCHIVO NO ENCONTRADO: d:\Users\Ikaros\Desktop\control-caja-osm\getjobid484197.pdf
+
+Probando archivo: getjobid485764.pdf
+Valores esperados - Lote: 403279119, OSM: 3243111,06, MUNI: 234994,47, Usuario: FGONZALEZ
+ARCHIVO NO ENCONTRADO: d:\Users\Ikaros\Desktop\control-caja-osm\getjobid485764.pdf
+
+Probando archivo: getjobid485763.pdf
+Valores esperados - Lote: 403279120, OSM: 5159825,54, MUNI: 223836,74, Usuario: SCRESPO
+ARCHIVO NO ENCONTRADO: d:\Users\Ikaros\Desktop\control-caja-osm\getjobid485763.pdf
+
+Probando archivo: getjobid485773.pdf
+Valores esperados - Lote: 403279121, OSM: 6154845,11, MUNI: 356596,81, Usuario: FGONZALEZ
+ARCHIVO NO ENCONTRADO: d:\Users\Ikaros\Desktop\control-caja-osm\getjobid485773.pdf
+

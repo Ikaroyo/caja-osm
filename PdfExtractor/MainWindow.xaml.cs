@@ -76,6 +76,9 @@ namespace PdfExtractor
             // Debug: Mostrar información de inicio
             LogDebug("=== INICIO DE APLICACIÓN ===");
             LogDebug($"Fecha: {DateTime.Now}");
+
+            // Ejecutar test de extracción al iniciar
+            // PdfDataExtractor.TestExtraction(); // Método removido temporalmente
             LogDebug($"URL SIGEMI: {SIGEMI_URL}");
             
             // Inicializar WebBrowser
@@ -86,6 +89,176 @@ namespace PdfExtractor
             
             // Cargar notas rápidas guardadas
             LoadQuickNotes();
+            
+            // Inicializar formulario de datos extraídos
+            ClearExtractedDataForm();
+            
+            // EJECUTAR PRUEBAS CON DATOS DE REFERENCIA
+            TestAllPdfsWithReferenceData();
+        }
+
+        private void ExecuteDebugExtraction()
+        {
+            try
+            {
+                var pdfPath = @"d:\Users\Ikaros\Desktop\control-caja-osm\getjobid484197.pdf";
+                if (System.IO.File.Exists(pdfPath))
+                {
+                    LogDebug("Ejecutando extracción de debug...");
+                    var extractor = new PdfDataExtractor();
+                    var data = extractor.ExtractFromFile(pdfPath);
+                    LogDebug("Extracción de debug completada. Revise los archivos debug_*.txt");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error en debug: {ex.Message}");
+            }
+        }
+
+        private void TestAllPdfsWithReferenceData()
+        {
+            var testCases = new[]
+            {
+                new { File = "getjobid484197.pdf", Lote = "403279116", OSM = 1478575.98m, MUNI = 33016.1m, Usuario = "CMAGALLANES" },
+                new { File = "getjobid485764.pdf", Lote = "403279119", OSM = 3243111.06m, MUNI = 234994.47m, Usuario = "FGONZALEZ" },
+                new { File = "getjobid485763.pdf", Lote = "403279120", OSM = 5159825.54m, MUNI = 223836.74m, Usuario = "SCRESPO" },
+                new { File = "getjobid485773.pdf", Lote = "403279121", OSM = 6154845.11m, MUNI = 356596.81m, Usuario = "FGONZALEZ" }
+            };
+
+            var resultsFile = @"d:\Users\Ikaros\Desktop\control-caja-osm\test_results.txt";
+            var results = new System.Text.StringBuilder();
+            results.AppendLine("=== RESULTADOS DE PRUEBAS DE EXTRACCIÓN ===");
+            results.AppendLine($"Fecha: {DateTime.Now}");
+            results.AppendLine();
+
+            foreach (var testCase in testCases)
+            {
+                var filePath = @$"d:\Users\Ikaros\Desktop\control-caja-osm\{testCase.File}";
+                results.AppendLine($"Probando archivo: {testCase.File}");
+                results.AppendLine($"Valores esperados - Lote: {testCase.Lote}, OSM: {testCase.OSM}, MUNI: {testCase.MUNI}, Usuario: {testCase.Usuario}");
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    try
+                    {
+                        var extractor = new PdfDataExtractor();
+                        var data = extractor.ExtractFromFile(filePath);
+
+                        results.AppendLine($"Valores extraídos - Lote: '{data.Lote}', OSM: {data.TotalOSM}, MUNI: {data.TotalMunicipalidad}, Usuario: '{data.Usuario}'");
+                        
+                        // Análisis de precisión
+                        var loteMatch = data.Lote == testCase.Lote;
+                        var osmMatch = Math.Abs(data.TotalOSM - testCase.OSM) < 1; // Tolerancia de 1 peso
+                        var muniMatch = Math.Abs(data.TotalMunicipalidad - testCase.MUNI) < 1;
+                        var usuarioMatch = data.Usuario.Equals(testCase.Usuario, StringComparison.OrdinalIgnoreCase);
+
+                        results.AppendLine($"Coincidencias - Lote: {(loteMatch ? "✓" : "✗")}, OSM: {(osmMatch ? "✓" : "✗")}, MUNI: {(muniMatch ? "✓" : "✗")}, Usuario: {(usuarioMatch ? "✓" : "✗")}");
+                        
+                        if (!muniMatch)
+                        {
+                            var difference = data.TotalMunicipalidad - testCase.MUNI;
+                            results.AppendLine($"MUNI - Diferencia: {difference:F2} (Extraído: {data.TotalMunicipalidad}, Esperado: {testCase.MUNI})");
+                        }
+                        
+                        results.AppendLine();
+                    }
+                    catch (Exception ex)
+                    {
+                        results.AppendLine($"ERROR: {ex.Message}");
+                        results.AppendLine();
+                    }
+                }
+                else
+                {
+                    results.AppendLine($"ARCHIVO NO ENCONTRADO: {filePath}");
+                    results.AppendLine();
+                }
+            }
+
+            try
+            {
+                System.IO.File.WriteAllText(resultsFile, results.ToString());
+                LogDebug($"Resultados de pruebas escritos en: {resultsFile}");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error escribiendo resultados: {ex.Message}");
+            }
+        }
+
+        private void TestPdfExtraction()
+        {
+            try
+            {
+                var pdfPath = @"d:\Users\Ikaros\Desktop\control-caja-osm\getjobid484197.pdf";
+                if (System.IO.File.Exists(pdfPath))
+                {
+                    LogDebug("=== INICIANDO TEST DE EXTRACCIÓN PDF ===");
+                    var extractor = new PdfDataExtractor();
+                    var data = extractor.ExtractFromFile(pdfPath);
+                    
+                    LogDebug($"Resultados de extracción:");
+                    LogDebug($"- Lote: {data.Lote}");
+                    LogDebug($"- Fecha: {data.FechaString}");
+                    LogDebug($"- Usuario: {data.Usuario}");
+                    LogDebug($"- OSM: {data.TotalOSM}");
+                    LogDebug($"- MUNI: {data.TotalMunicipalidad}");
+                    LogDebug($"- Total: {data.TotalGeneral}");
+                    LogDebug("=== FIN TEST DE EXTRACCIÓN PDF ===");
+                }
+                else
+                {
+                    LogDebug("Archivo PDF de prueba no encontrado");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error en test de extracción: {ex.Message}");
+            }
+        }
+
+        private async Task TestPdfExtractionDebug()
+        {
+            try
+            {
+                var pdfPath = @"d:\Users\Ikaros\Desktop\control-caja-osm\getjobid484197.pdf";
+                if (System.IO.File.Exists(pdfPath))
+                {
+                    LogDebug("=== INICIANDO DEBUG DE EXTRACCIÓN PDF ===");
+                    var extractor = new PdfDataExtractor();
+                    
+                    // Leer el archivo y extraer texto
+                    var pdfBytes = System.IO.File.ReadAllBytes(pdfPath);
+                    var fullText = extractor.ExtractTextFromPdf(pdfBytes);
+                    
+                    // Mostrar el texto completo en la consola
+                    System.Diagnostics.Debug.WriteLine("=== TEXTO COMPLETO DEL PDF ===");
+                    System.Diagnostics.Debug.WriteLine(fullText);
+                    System.Diagnostics.Debug.WriteLine("=== FIN TEXTO PDF ===");
+                    
+                    // Extraer datos estructurados
+                    var data = extractor.ExtractStructuredData(fullText);
+                    
+                    LogDebug($"Resultados de extracción después de debug:");
+                    LogDebug($"- Lote: '{data.Lote}'");
+                    LogDebug($"- Fecha: '{data.FechaString}'");
+                    LogDebug($"- Usuario: '{data.Usuario}'");
+                    LogDebug($"- OSM: {data.TotalOSM}");
+                    LogDebug($"- MUNI: {data.TotalMunicipalidad}");
+                    LogDebug($"- Total: {data.TotalGeneral}");
+                    LogDebug("=== FIN DEBUG DE EXTRACCIÓN PDF ===");
+                }
+                else
+                {
+                    LogDebug("Archivo PDF de prueba no encontrado para debug");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error en debug de extracción: {ex.Message}");
+                LogDebug($"StackTrace: {ex.StackTrace}");
+            }
         }
 
         private void InitializeWebBrowser()
@@ -682,9 +855,11 @@ namespace PdfExtractor
             try
             {
                 btnProcess.IsEnabled = false;
-                btnExtractData.IsEnabled = false;
                 txtStatus.Text = "Procesando...";
                 txtContent.Text = "";
+                
+                // Limpiar formulario antes de procesar
+                ClearExtractedDataForm();
 
                 string url = BuildUrl(input);
                 txtStatus.Text = $"Descargando PDF desde: {url}";
@@ -697,12 +872,11 @@ namespace PdfExtractor
                 currentPdfContent = extractedText;
                 txtContent.Text = extractedText;
 
-                txtStatus.Text = "Extrayendo datos estructurados...";
+                txtStatus.Text = "Extrayendo y guardando datos estructurados...";
                 
-                // Llamar automáticamente a la extracción de datos
-                await ExtractDataAutomatically();
+                // Llamar automáticamente a la extracción y guardado de datos
+                await ExtractAndSaveDataAutomatically();
 
-                txtStatus.Text = $"Completado. Datos extraídos y procesados automáticamente.";
             }
             catch (Exception ex)
             {
@@ -712,6 +886,118 @@ namespace PdfExtractor
             finally
             {
                 btnProcess.IsEnabled = true;
+            }
+        }
+
+        private async Task ExtractAndSaveDataAutomatically()
+        {
+            if (string.IsNullOrEmpty(currentPdfContent))
+            {
+                return;
+            }
+
+            try
+            {
+                txtStatus.Text = "Verificando configuración...";
+                
+                AppConfig config;
+                try
+                {
+                    config = AppConfig.Load();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error cargando configuración: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                
+                if (string.IsNullOrEmpty(config.SaveLocation))
+                {
+                    MessageBox.Show("Debe configurar una ubicación de guardado primero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    var configWindow = new ConfigWindow();
+                    configWindow.Owner = this;
+                    if (configWindow.ShowDialog() != true)
+                        return;
+                    config = AppConfig.Load();
+                }
+
+                txtStatus.Text = "Extrayendo datos estructurados...";
+                
+                LoteData extractedData;
+                try
+                {
+                    extractedData = PdfParser.ExtractData(currentPdfContent);
+                    
+                    // NO mostrar datos en formulario principal - solo en modal de revisión
+                    // DisplayExtractedData(extractedData); // Comentado para no mostrar en vista principal
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error extrayendo datos del PDF: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtStatus.Text = "Error en extracción de datos";
+                    return;
+                }
+                
+                if (extractedData == null)
+                {
+                    MessageBox.Show("Error al extraer datos del PDF.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtStatus.Text = "Error en extracción de datos";
+                    return;
+                }
+
+                txtStatus.Text = "Abriendo ventana de revisión...";
+                
+                // Mostrar ventana de revisión para confirmar datos
+                DataReviewWindow reviewWindow;
+                try
+                {
+                    reviewWindow = new DataReviewWindow(extractedData);
+                    reviewWindow.Owner = this;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error creando ventana de revisión: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtStatus.Text = "Error creando ventana";
+                    return;
+                }
+                
+                bool? result = reviewWindow.ShowDialog();
+                
+                if (result == true && reviewWindow.Saved)
+                {
+                    try
+                    {
+                        DataService.AddLote(extractedData, config.SaveLocation);
+                        txtStatus.Text = "✅ Datos guardados correctamente.";
+                        
+                        // Limpiar formulario después de guardar exitosamente
+                        ClearExtractedDataForm();
+                        
+                        MessageBox.Show($"✅ Datos procesados y guardados exitosamente!\n\n" +
+                                      $"Lote: {extractedData.Lote}\n" +
+                                      $"OSM: ${extractedData.OSM:N2}\n" +
+                                      $"MUNI: ${extractedData.MUNI:N2}\n" +
+                                      $"Total: ${(extractedData.OSM + extractedData.MUNI):N2}", 
+                                      "Proceso Completado", 
+                                      MessageBoxButton.OK, 
+                                      MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error guardando datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        txtStatus.Text = "Error guardando datos";
+                    }
+                }
+                else
+                {
+                    txtStatus.Text = "Extracción cancelada por el usuario.";
+                    // Mantener datos en formulario si se cancela
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error general: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                txtStatus.Text = "Error en proceso automático";
             }
         }
 
@@ -769,39 +1055,18 @@ namespace PdfExtractor
                     return;
                 }
 
-                txtStatus.Text = "Abriendo ventana de revisión...";
+                txtStatus.Text = "Guardando datos automáticamente...";
                 
-                DataReviewWindow reviewWindow;
+                // Guardar datos directamente sin mostrar ventana de revisión
                 try
                 {
-                    reviewWindow = new DataReviewWindow(extractedData);
-                    reviewWindow.Owner = this;
+                    DataService.AddLote(extractedData, config.SaveLocation);
+                    txtStatus.Text = "Datos extraídos y guardados correctamente.";
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error creando ventana de revisión: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    txtStatus.Text = "Error creando ventana";
-                    return;
-                }
-                
-                bool? result = reviewWindow.ShowDialog();
-                
-                if (result == true && reviewWindow.Saved)
-                {
-                    try
-                    {
-                        DataService.AddLote(extractedData, config.SaveLocation);
-                        txtStatus.Text = "Datos guardados correctamente.";
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error guardando datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        txtStatus.Text = "Error guardando datos";
-                    }
-                }
-                else
-                {
-                    txtStatus.Text = "Extracción cancelada.";
+                    MessageBox.Show($"Error guardando datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtStatus.Text = "Error guardando datos";
                 }
             }
             catch (Exception ex)
@@ -889,61 +1154,21 @@ namespace PdfExtractor
                     return;
                 }
 
-                System.Diagnostics.Debug.WriteLine("Step 3: Creating review window...");
-                txtStatus.Text = "Abriendo ventana de revisión...";
+                System.Diagnostics.Debug.WriteLine("Step 3: Saving data directly...");
+                txtStatus.Text = "Guardando datos automáticamente...";
                 
-                DataReviewWindow reviewWindow;
+                // Guardar datos directamente sin mostrar ventana de revisión
                 try
                 {
-                    reviewWindow = new DataReviewWindow(extractedData);
-                    reviewWindow.Owner = this;
-                    System.Diagnostics.Debug.WriteLine("Review window created successfully");
+                    DataService.AddLote(extractedData, config.SaveLocation);
+                    txtStatus.Text = "Datos extraídos y guardados correctamente.";
+                    System.Diagnostics.Debug.WriteLine("Data saved successfully");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error creating review window: {ex}");
-                    MessageBox.Show($"Error creando ventana de revisión: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    txtStatus.Text = "Error creando ventana";
-                    return;
-                }
-                
-                System.Diagnostics.Debug.WriteLine("Step 4: Showing review window...");
-                txtStatus.Text = "Mostrando ventana de revisión...";
-                
-                bool? result;
-                try
-                {
-                    result = reviewWindow.ShowDialog();
-                    System.Diagnostics.Debug.WriteLine($"Review window closed with result: {result}");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error showing review window: {ex}");
-                    MessageBox.Show($"Error mostrando ventana de revisión: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    txtStatus.Text = "Error mostrando ventana";
-                    return;
-                }
-                
-                if (result == true && reviewWindow.Saved)
-                {
-                    System.Diagnostics.Debug.WriteLine("Step 5: Saving data...");
-                    try
-                    {
-                        DataService.AddLote(extractedData, config.SaveLocation);
-                        txtStatus.Text = "Datos guardados correctamente.";
-                        System.Diagnostics.Debug.WriteLine("Data saved successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error saving data: {ex}");
-                        MessageBox.Show($"Error guardando datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        txtStatus.Text = "Error guardando datos";
-                    }
-                }
-                else
-                {
-                    txtStatus.Text = "Extracción cancelada.";
-                    System.Diagnostics.Debug.WriteLine("Extraction cancelled by user");
+                    System.Diagnostics.Debug.WriteLine($"Error saving data: {ex}");
+                    MessageBox.Show($"Error guardando datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtStatus.Text = "Error guardando datos";
                 }
             }
             catch (Exception ex)
@@ -968,68 +1193,9 @@ namespace PdfExtractor
 
         private void DisplayExtractedData(LoteData data)
         {
-            try
-            {
-                extractedDataPanel.Children.Clear();
-                
-                // Crear elementos visuales para mostrar los datos extraídos
-                var grid = new Grid();
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                
-                int row = 0;
-                
-                AddDataRow(grid, "Lote:", data.Lote, row++);
-                AddDataRow(grid, "Fecha:", data.FechaString, row++);
-                AddDataRow(grid, "Usuario:", data.Usuario, row++);
-                AddDataRow(grid, "", "", row++); // Separador
-                AddDataRow(grid, "Efectivo:", $"${data.Efectivo:N2}", row++);
-                AddDataRow(grid, "T. Crédito:", $"${data.Credito:N2}", row++);
-                AddDataRow(grid, "T. Débito:", $"${data.Debito:N2}", row++);
-                AddDataRow(grid, "Cheque:", $"${data.Cheque:N2}", row++);
-                AddDataRow(grid, "", "", row++); // Separador
-                AddDataRow(grid, "Total OSM:", $"${data.OSM:N2}", row++);
-                AddDataRow(grid, "Total MUNI:", $"${data.MUNI:N2}", row++);
-                AddDataRow(grid, "TOTAL:", $"${(data.OSM + data.MUNI):N2}", row++, true);
-                
-                extractedDataPanel.Children.Add(grid);
-            }
-            catch (Exception ex)
-            {
-                var errorText = new TextBlock 
-                { 
-                    Text = $"Error mostrando datos: {ex.Message}", 
-                    Foreground = System.Windows.Media.Brushes.Red 
-                };
-                extractedDataPanel.Children.Clear();
-                extractedDataPanel.Children.Add(errorText);
-            }
-        }
-
-        private void AddDataRow(Grid grid, string label, string value, int row, bool isBold = false)
-        {
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            
-            var labelText = new TextBlock 
-            { 
-                Text = label, 
-                FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
-                Margin = new Thickness(0, 2, 5, 2)
-            };
-            Grid.SetRow(labelText, row);
-            Grid.SetColumn(labelText, 0);
-            grid.Children.Add(labelText);
-            
-            var valueText = new TextBlock 
-            { 
-                Text = value, 
-                FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
-                Margin = new Thickness(0, 2, 0, 2)
-            };
-            if (isBold) valueText.Foreground = System.Windows.Media.Brushes.DarkGreen;
-            Grid.SetRow(valueText, row);
-            Grid.SetColumn(valueText, 1);
-            grid.Children.Add(valueText);
+            // Este método ya no se usa porque los datos se muestran solo en el modal
+            // Los datos aparecerán únicamente en la DataReviewWindow
+            LogDebug($"Datos extraídos para mostrar en modal: OSM={data.OSM:N2}, MUNI={data.MUNI:N2}");
         }
 
         private void BtnConfig_Click(object sender, RoutedEventArgs e)
@@ -1063,17 +1229,16 @@ namespace PdfExtractor
             txtContent.Text = "";
             currentPdfContent = "";
             txtStatus.Text = "Listo";
-            btnExtractData.IsEnabled = false;
             
-            // Limpiar panel de datos extraídos
-            extractedDataPanel.Children.Clear();
-            var infoText = new TextBlock 
-            { 
-                Text = "Los datos extraídos aparecerán aquí...", 
-                Foreground = System.Windows.Media.Brushes.Gray, 
-                FontStyle = FontStyles.Italic 
-            };
-            extractedDataPanel.Children.Add(infoText);
+            // Limpiar formulario reorganizado
+            ClearExtractedDataForm();
+        }
+
+        private void ClearExtractedDataForm()
+        {
+            // Este método ya no es necesario porque no hay formulario en la vista principal
+            // Los datos se manejan únicamente en el modal DataReviewWindow
+            LogDebug("Vista principal limpiada - no hay formulario de datos que limpiar");
         }
 
         private string BuildUrl(string input)

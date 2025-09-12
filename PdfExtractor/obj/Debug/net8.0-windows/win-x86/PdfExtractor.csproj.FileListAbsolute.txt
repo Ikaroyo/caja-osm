@@ -57,3 +57,8 @@ D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\w
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\win-x86\PdfExtractor.genruntimeconfig.cache
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\win-x86\ref\PdfExtractor.dll
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\win-x86\PdfExtractor.sourcelink.json
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\win-x86\UglyToad.PdfPig.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\win-x86\UglyToad.PdfPig.Core.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\win-x86\UglyToad.PdfPig.Fonts.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\win-x86\UglyToad.PdfPig.Tokenization.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\win-x86\UglyToad.PdfPig.Tokens.dll

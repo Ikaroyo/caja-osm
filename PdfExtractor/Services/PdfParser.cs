@@ -23,7 +23,7 @@ namespace PdfExtractor.Services
                     MUNI = extractedData.TotalMunicipalidad,
                     Credito = extractedData.TarjetaCredito,
                     Debito = extractedData.TarjetaDebito,
-                    Cheque = extractedData.Cheque
+                    Cheque = extractedData.ChequeDiferido
                 };
             }
             catch (Exception ex)

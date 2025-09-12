@@ -59,10 +59,8 @@
                                 <TextBox x:Name="txtInput" Height="25" Margin="0,0,0,10"/>
                                 
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                    <Button x:Name="btnProcess" Content="📥 Procesar PDF" Width="120" Height="30" 
+                                    <Button x:Name="btnProcess" Content="📥 Procesar PDF" Width="140" Height="30" 
                                            Click="BtnProcess_Click" Margin="0,0,10,0" Background="LightBlue"/>
-                                    <Button x:Name="btnExtractData" Content="⚙️ Extraer Datos" Width="120" Height="30" 
-                                           Click="BtnExtractData_Click" Margin="0,0,10,0" IsEnabled="False" Background="LightGreen" Visibility="Collapsed"/>
                                     <Button x:Name="btnClear" Content="🗑️ Limpiar" Width="80" Height="30" 
                                            Click="BtnClear_Click" Background="LightCoral"/>
                                 </StackPanel>
@@ -81,15 +79,34 @@
                         <TextBlock Grid.Row="2" x:Name="txtStatus" Text="Listo" Margin="0,0,0,10" 
                                   Foreground="Blue" FontWeight="Bold" Background="AliceBlue" Padding="5"/>
                         
-                        <!-- Extracted Data Display - Oculto por solicitud del usuario -->
-                                                <!-- Extracted Data Display - Oculto por solicitud del usuario -->
-                        <GroupBox Grid.Row="3" Header="Datos Extraídos" Margin="0,0,0,10" MaxHeight="200" Visibility="Collapsed">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <StackPanel x:Name="extractedDataPanel" Margin="5">
-                                    <TextBlock Text="Los datos extraídos aparecerán aquí..." 
-                                              Foreground="Gray" FontStyle="Italic"/>
-                                </StackPanel>
+                        <!-- Formulario de Extracción - Oculto en vista principal -->
+                        <GroupBox Grid.Row="3" Header="📋 Datos Extraídos" Margin="0,0,0,10" MaxHeight="400" Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                <Grid x:Name="extractedDataPanel" Margin="10">
+                                    <!-- Grid content hidden in main view -->
+                                </Grid>
                             </ScrollViewer>
+                        </GroupBox>
+                        
+                        <!-- Mensaje informativo en lugar del formulario -->
+                        <GroupBox Grid.Row="3" Header="ℹ️ Información" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="💡 Flujo de trabajo:" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                    • Ingrese el número del PDF (ej: 484197) o URL completa
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                    • Presione "Procesar PDF" para descargar y extraer datos
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                    • Se abrirá una ventana para revisar y confirmar los datos extraídos
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                    • Los datos se guardarán automáticamente tras la confirmación
+                                </TextBlock>
+                                <TextBlock Text="🎯 Los datos extraídos aparecerán en la ventana de revisión, no en esta vista principal." 
+                                          FontStyle="Italic" Foreground="DarkBlue" TextWrapping="Wrap"/>
+                            </StackPanel>
                         </GroupBox>
                         
                         <!-- PDF Content Display - Oculto por solicitud del usuario -->

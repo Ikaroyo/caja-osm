@@ -58,6 +58,10 @@
               "target": "Package",
               "version": "[8.0.5, )"
             },
+            "UglyToad.PdfPig": {
+              "target": "Package",
+              "version": "[1.7.0-custom-5, )"
+            },
             "itext7": {
               "target": "Package",
               "version": "[8.0.2, )"
@@ -84,7 +88,7 @@
               "version": "[8.0.17, 8.0.17]"
             },
             {
-              "name": "Microsoft.NETCore.App.Host.win-x86",
+              "name": "Microsoft.NETCore.App.Host.win-x64",
               "version": "[8.0.17, 8.0.17]"
             },
             {
@@ -105,11 +109,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.205/PortableRuntimeIdentifierGraph.json"
-        }
-      },
-      "runtimes": {
-        "win-x86": {
-          "#import": []
         }
       }
     }
