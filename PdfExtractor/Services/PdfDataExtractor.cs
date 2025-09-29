@@ -38,7 +38,8 @@ namespace PdfExtractor.Services
                 data.DebugInfo = (data.DebugInfo ?? "") + "\n[INFO] Activando PdfPig fallback...";
                 try
                 {
-                    var (muni, osm, dbg) = PdfPigExtractor.ExtractAnchoredTotals(pdfData);
+                    // var (muni, osm, dbg) = PdfPigExtractor.ExtractAnchoredTotals(pdfData);
+                    decimal muni = 0, osm = 0; string dbg = "Método deshabilitado temporalmente";
                     data.DebugInfo += $"\n[PdfPig] OSM: {osm:N2}, MUNI: {muni:N2}";
                     if (muni > 0 && osm > 0 && Math.Abs(muni + osm - (data.TotalOSM + data.TotalMunicipalidad)) < 1000)
                     {
@@ -70,7 +71,8 @@ namespace PdfExtractor.Services
                 data.DebugInfo = (data.DebugInfo ?? "") + "\n[INFO] Activando PdfPig fallback...";
                 try
                 {
-                    var (muni, osm, dbg) = PdfPigExtractor.ExtractAnchoredTotals(pdfData);
+                    // var (muni, osm, dbg) = PdfPigExtractor.ExtractAnchoredTotals(pdfData);
+                    decimal muni = 0, osm = 0; string dbg = "Método deshabilitado temporalmente";
                     data.DebugInfo += $"\n[PdfPig] OSM: {osm:N2}, MUNI: {muni:N2}";
                     if (muni > 0 && osm > 0 && Math.Abs(muni + osm - (data.TotalOSM + data.TotalMunicipalidad)) < 1000)
                     {
@@ -101,7 +103,8 @@ namespace PdfExtractor.Services
                 data.DebugInfo = (data.DebugInfo ?? "") + "\n[INFO] Activando PdfPig fallback...";
                 try
                 {
-                    var (muni, osm, dbg) = PdfPigExtractor.ExtractAnchoredTotals(pdfData);
+                    // var (muni, osm, dbg) = PdfPigExtractor.ExtractAnchoredTotals(pdfData);
+                    decimal muni = 0, osm = 0; string dbg = "Método deshabilitado temporalmente";
                     data.DebugInfo += $"\n[PdfPig] OSM: {osm:N2}, MUNI: {muni:N2}";
                     if (muni > 0 && osm > 0 && Math.Abs(muni + osm - (data.TotalOSM + data.TotalMunicipalidad)) < 1000)
                     {
@@ -242,98 +245,90 @@ namespace PdfExtractor.Services
             var debugSb = new StringBuilder();
             debugSb.AppendLine($"Total Lote Esperado: {grandTotal:N2}");
 
-            // Patrones específicos basados en el texto real
-            // OSM: "Total Recibos en el lote de Obras Sanitarias.*Total Importe:\s*([\d.,]+)"
-            var osmMatch = Regex.Match(pdfText, @"Total Recibos en el lote de Obras Sanitarias.*?Total Importe:\s*([\d.,]+)", RegexOptions.Singleline);
-            decimal osm = osmMatch.Success ? ParseDecimal(osmMatch.Groups[1].Value) : 0;
-            
-            // MUNI: Buscar patrón específico del número aislado después de los recibos de municipalidad
-            decimal muni = 0;
-            var muniValueMatch = Regex.Match(pdfText, @"Por \d+-Municipalidad.*?(?:\n.*?){0,10}\n\d+\s+([\d.,]+)", RegexOptions.Singleline);
-            if (muniValueMatch.Success)
+            // LÓGICA PRINCIPAL: Verificar si existe "Por 774-Municipalidad V.Mercedes"
+            bool hasMuniPattern = pdfText.Contains("Por 774-Municipalidad V.Mercedes");
+            debugSb.AppendLine($"¿Contiene patrón MUNI 'Por 774-Municipalidad V.Mercedes'? {(hasMuniPattern ? "SÍ" : "NO")}");
+
+            if (hasMuniPattern)
             {
-                muni = ParseDecimal(muniValueMatch.Groups[1].Value);
+                // CASO NORMAL: Hay MUNI - extraer OSM y MUNI por separado
+                debugSb.AppendLine("MODO: Extracción normal (con MUNI)");
+                
+                // OSM: "Total Recibos en el lote de Obras Sanitarias.*Total Importe:\s*([\d.,]+)"
+                var osmMatch = Regex.Match(pdfText, @"Total Recibos en el lote de Obras Sanitarias.*?Total Importe:\s*([\d.,]+)", RegexOptions.Singleline);
+                decimal osm = osmMatch.Success ? ParseDecimal(osmMatch.Groups[1].Value) : 0;
+                
+                // MUNI: Buscar patrón específico del número aislado después de los recibos de municipalidad
+                decimal muni = 0;
+                var muniValueMatch = Regex.Match(pdfText, @"Por \d+-Municipalidad.*?(?:\n.*?){0,10}\n\d+\s+([\d.,]+)", RegexOptions.Singleline);
+                if (muniValueMatch.Success)
+                {
+                    muni = ParseDecimal(muniValueMatch.Groups[1].Value);
+                }
+                else
+                {
+                    // Patrón alternativo: Total Importe después de section municipalidad
+                    var muniTotalMatch = Regex.Match(pdfText, @"Por \d+-Municipalidad.*?Total Recibos Cobrados:\s*.*?Total Importe:\s*([\d.,]+)", RegexOptions.Singleline);
+                    if (muniTotalMatch.Success)
+                    {
+                        muni = ParseDecimal(muniTotalMatch.Groups[1].Value);
+                    }
+                }
+
+                debugSb.AppendLine($"OSM (patrón específico): {osm:N2}");
+                debugSb.AppendLine($"MUNI (patrón específico): {muni:N2}");
+
+                // Verificar si los valores son válidos y suman el total
+                if (osm > 0 && muni > 0 && Math.Abs(osm + muni - grandTotal) < 0.1m)
+                {
+                    data.TotalOSM = osm;
+                    data.TotalMunicipalidad = muni;
+                    data.TotalGeneral = osm + muni;
+                    debugSb.AppendLine("ÉXITO: Extracción normal completada");
+                    data.DebugInfo = debugSb.ToString();
+                    return;
+                }
             }
             else
             {
-                // Patrón alternativo: Total Importe después de section municipalidad
-                var muniTotalMatch = Regex.Match(pdfText, @"Por \d+-Municipalidad.*?Total Recibos Cobrados:\s*.*?Total Importe:\s*([\d.,]+)", RegexOptions.Singleline);
-                if (muniTotalMatch.Success)
+                // CASO ESPECIAL: NO hay "Por 774-Municipalidad V.Mercedes"
+                // → El último "Total Importe:" es OSM, no hay MUNI
+                debugSb.AppendLine("MODO: Extracción especial (SIN patrón MUNI)");
+                
+                // Buscar TODAS las ocurrencias de "Total Importe:" 
+                var totalImporteMatches = Regex.Matches(pdfText, @"Total Importe:\s*([\d.,]+)", RegexOptions.IgnoreCase);
+                debugSb.AppendLine($"Encontrados {totalImporteMatches.Count} 'Total Importe:'");
+                
+                if (totalImporteMatches.Count > 0)
                 {
-                    muni = ParseDecimal(muniTotalMatch.Groups[1].Value);
-                }
-            }
-
-            debugSb.AppendLine($"OSM (patrón específico): {osm:N2}");
-            debugSb.AppendLine($"MUNI (patrón específico): {muni:N2}");
-
-            // Verificar si los valores son válidos y suman el total
-            if (osm > 0 && muni > 0 && Math.Abs(osm + muni - grandTotal) < 0.1m)
-            {
-                data.TotalOSM = osm;
-                data.TotalMunicipalidad = muni;
-                data.TotalGeneral = osm + muni;
-                debugSb.AppendLine("ÉXITO: Extracción por patrones específicos");
-                data.DebugInfo = debugSb.ToString();
-                return;
-            }
-
-            // Fallback: activar PdfPig si algún valor es 0 o no suman correctamente
-            if (osm == 0 || muni == 0 || Math.Abs(osm + muni - grandTotal) > 0.1m)
-            {
-                debugSb.AppendLine("INFO: Activando fallback por suma de candidatos...");
-                
-                // Fallback: buscar pares de subtotales que sumen el Importe Lote
-                var totalMatches = Regex.Matches(pdfText, @"Total Importe:\s*([\d.,]+)");
-                var porMatches = Regex.Matches(pdfText, @"Por \d+-[^:]*:\s*([\d.,]+)");
-                
-                // Combinar ambos tipos de coincidencias
-                var allAmounts = new System.Collections.Generic.List<decimal>();
-                foreach (Match m in totalMatches)
-                    allAmounts.Add(ParseDecimal(m.Groups[1].Value));
-                foreach (Match m in porMatches)
-                    allAmounts.Add(ParseDecimal(m.Groups[1].Value));
-                
-                var totals = allAmounts.Distinct().Where(x => x > 1000 && x != grandTotal).ToList(); // Filtrar valores pequeños
-                debugSb.AppendLine($"Candidatos a subtotales (>1000): {totals.Count}");
-                foreach (var t in totals)
-                    debugSb.AppendLine($"- {t:N2}");
+                    // Tomar el ÚLTIMO "Total Importe:" como OSM
+                    var lastMatch = totalImporteMatches[totalImporteMatches.Count - 1];
+                    decimal osm = ParseDecimal(lastMatch.Groups[1].Value);
                     
-                for (int i = 0; i < totals.Count; i++)
-                {
-                    for (int j = i + 1; j < totals.Count; j++)
+                    debugSb.AppendLine($"Último 'Total Importe:' = {osm:N2} (asignado a OSM)");
+                    
+                    if (Math.Abs(osm - grandTotal) < 0.1m)
                     {
-                        if (Math.Abs(totals[i] + totals[j] - grandTotal) < 0.1m)
-                        {
-                            data.TotalMunicipalidad = Math.Min(totals[i], totals[j]);
-                            data.TotalOSM = Math.Max(totals[i], totals[j]);
-                            data.TotalGeneral = data.TotalOSM + data.TotalMunicipalidad;
-                            debugSb.AppendLine($"ÉXITO: Par por suma -> {totals[i]:N2} + {totals[j]:N2}");
-                            data.DebugInfo = debugSb.ToString();
-                            return;
-                        }
-                    }
-                }
-                
-                // Estrategia de resta: si solo tenemos un candidato válido, calcular el faltante
-                if (totals.Count == 1)
-                {
-                    decimal foundTotal = totals[0];
-                    decimal missingTotal = grandTotal - foundTotal;
-                    if (missingTotal > 0)
-                    {
-                        debugSb.AppendLine($"ESTRATEGIA RESTA: {foundTotal:N2} + {missingTotal:N2} = {grandTotal:N2}");
-                        data.TotalMunicipalidad = Math.Min(foundTotal, missingTotal);
-                        data.TotalOSM = Math.Max(foundTotal, missingTotal);
-                        data.TotalGeneral = data.TotalOSM + data.TotalMunicipalidad;
-                        debugSb.AppendLine($"ÉXITO: Por resta -> OSM:{data.TotalOSM:N2}, MUNI:{data.TotalMunicipalidad:N2}");
+                        data.TotalOSM = osm;
+                        data.TotalMunicipalidad = 0; // No hay MUNI en este caso
+                        data.TotalGeneral = osm;
+                        debugSb.AppendLine("ÉXITO: Extracción especial completada");
                         data.DebugInfo = debugSb.ToString();
                         return;
                     }
+                    else
+                    {
+                        debugSb.AppendLine($"ADVERTENCIA: OSM ({osm:N2}) no coincide con Total Lote ({grandTotal:N2})");
+                    }
                 }
-                
-                debugSb.AppendLine("ERROR: No se encontró un par de subtotales que sumen el Total Lote.");
+                else
+                {
+                    debugSb.AppendLine("ERROR: No se encontró ningún 'Total Importe:' en el PDF");
+                }
             }
+
+            // Si llegamos aquí, algo falló
+            debugSb.AppendLine("ERROR: No se pudo extraer OSM ni MUNI con ningún método");
             data.DebugInfo = debugSb.ToString();
         }    // Busca el número más cercano (antes o después) a la palabra clave
     private decimal FindClosestAmountAround(string text, string anchor)

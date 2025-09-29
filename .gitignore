@@ -1,0 +1,23 @@
+# Ignotrar binarios
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignorar archivos de configuración del entorno
+.env
+
+# Ignorar archivos de log
+*.log
+
+# Ignorar archivos temporales del sistema
+*.tmp
+
+# Ignorar carpeta bin
+bin/
+
+# Ignorar carpeta obj
+obj/
+
+# Ignora example
+example/

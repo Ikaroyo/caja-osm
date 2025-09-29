@@ -1,89 +1,279 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using UglyToad.PdfPig;
-using UglyToad.PdfPig.Content;
 
 namespace PdfExtractor.Services
 {
-    public static class PdfPigExtractor
+    public class PdfPigExtractionResult
     {
-        // Encuentra el número más cercano alrededor de un ancla, usando coordenadas
-        public static (decimal muni, decimal osm, string debug) ExtractAnchoredTotals(byte[] pdfBytes)
+        public string? Lote { get; set; }
+        public string? Usuario { get; set; }
+        public decimal? TarjetaCredito { get; set; }
+        public decimal? TarjetaDebito { get; set; }
+        public decimal? ChequeDiferido { get; set; }
+        public decimal? Muni { get; set; }
+        public decimal? Osm { get; set; }
+    }
+
+    /// <summary>
+    /// Advanced PDF extractor using PdfPig with robust text cleaning and pattern matching.
+    /// Implements best practices for OSM document processing including page concatenation,
+    /// artifact removal, and intelligent pattern detection with lookahead/lookbehind support.
+    /// </summary>
+    public class PdfPigExtractor
+    {
+        /// <summary>
+        /// Main method to process a PDF file and extract OSM data
+        /// </summary>
+        public PdfPigExtractionResult ExtractData(string filePath)
         {
-            var debug = new System.Text.StringBuilder();
-            decimal muni = 0, osm = 0;
-
-            using (var doc = PdfDocument.Open(pdfBytes))
+            var result = new PdfPigExtractionResult();
+            
+            if (!File.Exists(filePath))
             {
-                foreach (var page in doc.GetPages())
-                {
-                    var words = page.GetWords().ToList();
-                    // Buscar anclas más específicas
-                    var muniAnchors = words.Where(w => 
-                        w.Text.Equals("Municipalidad", StringComparison.OrdinalIgnoreCase) ||
-                        w.Text.Contains("Muni", StringComparison.OrdinalIgnoreCase) ||
-                        w.Text.Contains("Municipal", StringComparison.OrdinalIgnoreCase)).ToList();
-                    
-                    var osmAnchors = words.Where(w => 
-                        w.Text.Contains("Obras", StringComparison.OrdinalIgnoreCase) || 
-                        w.Text.Contains("Sanitarias", StringComparison.OrdinalIgnoreCase) ||
-                        w.Text.Contains("OSM", StringComparison.OrdinalIgnoreCase)).ToList();
-
-                    if (muniAnchors.Count > 0)
-                    {
-                        muni = FindClosestAmountNear(words, muniAnchors);
-                        debug.AppendLine($"PdfPig MUNI: {muni:N2} en página {page.Number}");
-                    }
-                    if (osmAnchors.Count > 0)
-                    {
-                        osm = FindClosestAmountNear(words, osmAnchors);
-                        debug.AppendLine($"PdfPig OSM: {osm:N2} en página {page.Number}");
-                    }
-
-                    if (muni > 0 && osm > 0) break;
-                }
+                throw new FileNotFoundException($"PDF file not found: {filePath}");
             }
 
-            return (muni, osm, debug.ToString());
+            // Use PdfPig to open and read all text from the PDF
+            using PdfDocument document = PdfDocument.Open(filePath);
+            
+            // Step 1: Concatenate all pages into a single string
+            var allPagesText = new StringBuilder();
+            foreach (var page in document.GetPages())
+            {
+                allPagesText.AppendLine(page.Text);
+            }
+            
+            // Step 2: Clean artifacts and disruptive elements
+            string cleanText = CleanPdfText(allPagesText.ToString());
+
+            // Step 3: Extract data using improved patterns on clean text
+            result.Lote = ExtractSingleValue(cleanText, @"Lote\s*C?\s*:?\s*(\w+)(?:\s+|$)");
+            result.Usuario = ExtractSingleValue(cleanText, @"Usuario\s*:?\s*(\w+)|Cajero\s*:?\s*(\w+)")?.Replace("Cajero", "").Trim();
+            
+            // Extract payment method totals with improved patterns
+            result.TarjetaCredito = ExtractDecimal(cleanText, @"TARJETACR\s*:?\s*([\d.,]+)(?=\s|$|\n)");
+            result.TarjetaDebito = ExtractDecimal(cleanText, @"TARJETADE\s*:?\s*([\d.,]+)(?=\s|$|\n)");
+            result.ChequeDiferido = ExtractDecimal(cleanText, @"CHEQUEDIF\s*:?\s*([\d.,]+)(?=\s|$|\n)");
+            
+            // LÓGICA SIMPLIFICADA SEGÚN ESPECIFICACIÓN:
+            // 1. Verificar si existe la cadena "Por 774-Municipalidad V.Mercedes"
+            bool hasMuniPattern = cleanText.Contains("Por 774-Municipalidad V.Mercedes");
+            
+            // Debug logging
+            System.Diagnostics.Debug.WriteLine($"[PdfPigExtractor] Has MUNI pattern: {hasMuniPattern}");
+            
+            if (hasMuniPattern)
+            {
+                // CASO NORMAL: Hay MUNI - extraer MUNI y OSM por separado
+                System.Diagnostics.Debug.WriteLine("[PdfPigExtractor] Using NORMAL logic (has MUNI)");
+                result.Muni = ExtractDecimal(cleanText, @"Por 774-Municipalidad V\.Mercedes[\s\S]*?Total Importe:\s*([\d.,]+)")
+                             ?? ExtractDecimal(cleanText, @"MUNI\s*:?\s*([\d.,]+)(?=\s|$|\n)")
+                             ?? ExtractDecimal(cleanText, @"Municipalidad[\s\S]*?([\d.,]+)");
+                
+                // Buscar OSM con patrones específicos cuando hay MUNI - MÁS PATRONES
+                result.Osm = ExtractDecimal(cleanText, @"OSM\s*:?\s*([\d.,]+)(?=\s|MUNI|$|\n)")
+                            ?? ExtractDecimal(cleanText, @"Obras Sanitarias[\s\S]*?Total Importe:\s*([\d.,]+)")
+                            ?? ExtractDecimal(cleanText, @"Importe Lote\s+([\d.,]+)")
+                            // PATRÓN ADICIONAL: Si hay tanto MUNI como OSM, buscar el segundo "Total Importe"
+                            ?? ExtractSecondTotalImporte(cleanText);
+                            
+                System.Diagnostics.Debug.WriteLine($"[PdfPigExtractor] Normal results: MUNI={result.Muni?.ToString("N2") ?? "null"}, OSM={result.Osm?.ToString("N2") ?? "null"}");
+            }
+            else
+            {
+                // CASO ESPECIAL: NO hay "Por 774-Municipalidad V.Mercedes"
+                // → El último "Total Importe:" es OSM, no hay MUNI
+                System.Diagnostics.Debug.WriteLine("[PdfPigExtractor] Using SPECIAL logic (NO MUNI pattern found)");
+                result.Muni = null;
+                result.Osm = ExtractLastTotalImporte(cleanText);
+                
+                System.Diagnostics.Debug.WriteLine($"[PdfPigExtractor] Special results: MUNI=null, OSM={result.Osm?.ToString("N2") ?? "null"}");
+            }
+
+            // DEBUG: Si OSM y MUNI son null/0, mostrar información adicional
+            if ((result.Osm == null || result.Osm == 0) && (result.Muni == null || result.Muni == 0))
+            {
+                System.Diagnostics.Debug.WriteLine("[PdfPigExtractor] WARNING: Both OSM and MUNI are null/0!");
+                System.Diagnostics.Debug.WriteLine($"[PdfPigExtractor] File: {Path.GetFileName(filePath)}");
+                System.Diagnostics.Debug.WriteLine($"[PdfPigExtractor] Had MUNI pattern: {cleanText.Contains("Por 774-Municipalidad V.Mercedes")}");
+                
+                // Mostrar las primeras líneas del texto limpio para debug
+                var firstLines = cleanText.Split('\n').Take(10);
+                System.Diagnostics.Debug.WriteLine("[PdfPigExtractor] First 10 lines of clean text:");
+                foreach (var line in firstLines)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  > {line.Trim()}");
+                }
+                
+                // Buscar manualmente "Total Importe"
+                var debugMatches = System.Text.RegularExpressions.Regex.Matches(cleanText, @"Total Importe", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                System.Diagnostics.Debug.WriteLine($"[PdfPigExtractor] Found {debugMatches.Count} instances of 'Total Importe' (without values)");
+            }
+
+            return result;
         }
 
-        private static decimal FindClosestAmountNear(List<Word> words, List<Word> anchors)
+        /// <summary>
+        /// Clean PDF text by removing headers, footers and disruptive artifacts.
+        /// This implements best practices for robust PDF text processing.
+        /// </summary>
+        private string CleanPdfText(string rawText)
         {
-            // Buscar valores en un radio de 300pts alrededor del ancla más cercana
-            var regex = new Regex(@"^[\d]{1,3}(?:[.,][\d]{3})*[.,]\d{2}$");
-            decimal best = 0;
-            double bestDist = double.MaxValue;
+            if (string.IsNullOrEmpty(rawText))
+                return "";
 
-            foreach (var anchor in anchors)
+            // LIMPIEZA MÁS CONSERVADORA - solo eliminar lo esencial
+            var patterns = new[]
             {
-                var ax = (anchor.BoundingBox.Left + anchor.BoundingBox.Right) / 2.0;
-                var ay = (anchor.BoundingBox.Bottom + anchor.BoundingBox.Top) / 2.0;
-                foreach (var w in words)
+                @"Página\s+\d+.*?\n",           // Page numbers
+                @"^\s*[-=]{10,}\s*$"           // Long separator lines only
+            };
+
+            var cleanText = rawText;
+            foreach (var pattern in patterns)
+            {
+                cleanText = Regex.Replace(cleanText, pattern, "", 
+                    RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            }
+
+            // Normalización MÁS SUAVE - preservar más estructura
+            cleanText = Regex.Replace(cleanText, @"\s{3,}", " ");        // Solo reemplazar 3+ espacios
+            cleanText = Regex.Replace(cleanText, @"\n\s*\n\s*\n", "\n\n"); // Solo reemplazar 3+ saltos de línea
+            
+            return cleanText.Trim();
+        }
+
+        /// <summary>
+        /// Helper to run regex and return the first captured group as a string.
+        /// Supports patterns with OR conditions (multiple capture groups).
+        /// </summary>
+        private string? ExtractSingleValue(string text, string pattern)
+        {
+            Match match = Regex.Match(text, pattern);
+            if (!match.Success) return null;
+            
+            // For patterns with an OR condition, result might be in Group 1 or 2
+            return match.Groups[1].Value.Trim() != "" ? match.Groups[1].Value.Trim() : 
+                   match.Groups.Count > 2 ? match.Groups[2].Value.Trim() : null;
+        }
+
+        /// <summary>
+        /// Helper to run regex and parse the result to a decimal using Argentine culture.
+        /// Handles various number formats commonly found in OSM documents.
+        /// </summary>
+        private decimal? ExtractDecimal(string text, string pattern)
+        {
+            var valueStr = ExtractSingleValue(text, pattern);
+            if (valueStr == null) return null;
+
+            // Standardize number format and parse using Argentine culture
+            var culture = new CultureInfo("es-AR"); // Argentine culture for parsing
+            if (decimal.TryParse(valueStr.Replace('.', culture.NumberFormat.NumberDecimalSeparator[0]).Replace(',', culture.NumberFormat.NumberDecimalSeparator[0]), 
+                NumberStyles.Any, 
+                culture, 
+                out decimal parsedValue))
+            {
+                return parsedValue;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Extrae el valor del último "Total Importe:" encontrado en el texto.
+        /// Usado para casos especiales donde no hay MUNI y el último Total Importe es OSM.
+        /// </summary>
+        private decimal? ExtractLastTotalImporte(string text)
+        {
+            // Buscar TODAS las ocurrencias de "Total Importe:" con sus valores
+            var matches = Regex.Matches(text, @"Total Importe:\s*([\d.,]+)", RegexOptions.IgnoreCase);
+            
+            System.Diagnostics.Debug.WriteLine($"[ExtractLastTotalImporte] Found {matches.Count} 'Total Importe:' occurrences");
+            
+            if (matches.Count == 0)
+                return null;
+            
+            // Debug: mostrar todas las ocurrencias
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var value = matches[i].Groups[1].Value;
+                System.Diagnostics.Debug.WriteLine($"[ExtractLastTotalImporte] [{i+1}] Total Importe: {value}");
+            }
+            
+            // Tomar la ÚLTIMA ocurrencia (la más importante)
+            var lastMatch = matches[matches.Count - 1];
+            var valueStr = lastMatch.Groups[1].Value.Trim();
+            
+            System.Diagnostics.Debug.WriteLine($"[ExtractLastTotalImporte] Using LAST occurrence: {valueStr}");
+            
+            // Parsear usando cultura argentina
+            var culture = new CultureInfo("es-AR");
+            if (decimal.TryParse(valueStr.Replace('.', culture.NumberFormat.NumberDecimalSeparator[0]).Replace(',', culture.NumberFormat.NumberDecimalSeparator[0]), 
+                NumberStyles.Any, 
+                culture, 
+                out decimal parsedValue))
+            {
+                System.Diagnostics.Debug.WriteLine($"[ExtractLastTotalImporte] Parsed successfully: {parsedValue:N2}");
+                return parsedValue;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[ExtractLastTotalImporte] Failed to parse: {valueStr}");
+            return null;
+        }
+
+        /// <summary>
+        /// Para casos donde hay MUNI y OSM: extrae el SEGUNDO "Total Importe:" (el primero sería MUNI)
+        /// </summary>
+        private decimal? ExtractSecondTotalImporte(string text)
+        {
+            var matches = Regex.Matches(text, @"Total Importe:\s*([\d.,]+)", RegexOptions.IgnoreCase);
+            
+            System.Diagnostics.Debug.WriteLine($"[ExtractSecondTotalImporte] Found {matches.Count} 'Total Importe:' occurrences");
+            
+            if (matches.Count >= 2)
+            {
+                // Tomar la SEGUNDA ocurrencia (primera = MUNI, segunda = OSM)
+                var secondMatch = matches[1];
+                var valueStr = secondMatch.Groups[1].Value.Trim();
+                
+                System.Diagnostics.Debug.WriteLine($"[ExtractSecondTotalImporte] Using SECOND occurrence: {valueStr}");
+                
+                var culture = new CultureInfo("es-AR");
+                if (decimal.TryParse(valueStr.Replace('.', culture.NumberFormat.NumberDecimalSeparator[0]).Replace(',', culture.NumberFormat.NumberDecimalSeparator[0]), 
+                    NumberStyles.Any, 
+                    culture, 
+                    out decimal parsedValue))
                 {
-                    if (!regex.IsMatch(w.Text)) continue;
-                    var wx = (w.BoundingBox.Left + w.BoundingBox.Right) / 2.0;
-                    var wy = (w.BoundingBox.Bottom + w.BoundingBox.Top) / 2.0;
-                    double d = Math.Sqrt((wx - ax) * (wx - ax) + (wy - ay) * (wy - ay));
-                    if (d < bestDist && d <= 300) // 300 pts ~ 4.2 inches
-                    {
-                        if (TryParseAmount(w.Text, out var val) && val > 1000) // Solo montos significativos
-                        {
-                            best = val; bestDist = d;
-                        }
-                    }
+                    System.Diagnostics.Debug.WriteLine($"[ExtractSecondTotalImporte] Parsed successfully: {parsedValue:N2}");
+                    return parsedValue;
                 }
             }
-            return best;
+            
+            return null;
         }
 
-        private static bool TryParseAmount(string s, out decimal value)
+        /// <summary>
+        /// Debug method to show PDF content for pattern analysis
+        /// </summary>
+        public void ShowPdfContent(string pdfPath)
         {
-            s = s.Trim();
-            var culture = s.Contains(',') ? new CultureInfo("es-AR") : CultureInfo.InvariantCulture;
-            return decimal.TryParse(s, NumberStyles.Any, culture, out value);
+            using var document = PdfDocument.Open(pdfPath);
+            Console.WriteLine($"📄 PDF: {Path.GetFileName(pdfPath)} ({document.NumberOfPages} páginas)");
+            
+            for (int pageNum = 1; pageNum <= Math.Min(2, document.NumberOfPages); pageNum++)
+            {
+                var page = document.GetPage(pageNum);
+                var text = page.Text;
+                
+                Console.WriteLine($"\n--- PÁGINA {pageNum} ---");
+                Console.WriteLine(text.Substring(0, Math.Min(1000, text.Length)));
+                if (text.Length > 1000) Console.WriteLine("... (texto truncado)");
+            }
         }
     }
 }

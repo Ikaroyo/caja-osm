@@ -78,9 +78,6 @@ namespace PdfExtractor
             // Debug: Mostrar información de inicio
             LogDebug("=== INICIO DE APLICACIÓN ===");
             LogDebug($"Fecha: {DateTime.Now}");
-
-            // Ejecutar test de extracción al iniciar
-            // PdfDataExtractor.TestExtraction(); // Método removido temporalmente
             LogDebug($"URL SIGEMI: {SIGEMI_URL}");
             
             // Inicializar WebBrowser
@@ -1055,12 +1052,36 @@ namespace PdfExtractor
                     config = AppConfig.Load();
                 }
 
-                txtStatus.Text = "Extrayendo datos estructurados...";
+                txtStatus.Text = "Extrayendo datos estructurados con PdfPig...";
                 
                 LoteData extractedData;
                 try
                 {
-                    extractedData = PdfParser.ExtractData(currentPdfContent);
+                    // Try the improved PdfPig extractor first
+                    if (currentPdfData != null && currentPdfData.Length > 0)
+                    {
+                        // Create temporary PDF file for PdfPig
+                        string tempFile = Path.Combine(Path.GetTempPath(), $"pdf_extract_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+                        File.WriteAllBytes(tempFile, currentPdfData);
+                        
+                        try
+                        {
+                            extractedData = PdfParser.ExtractDataWithPdfPig(tempFile);
+                            txtStatus.Text = "Datos extraídos con PdfPig (método mejorado)";
+                        }
+                        finally
+                        {
+                            // Clean up temporary file
+                            try { File.Delete(tempFile); } catch { }
+                        }
+                    }
+                    else
+                    {
+                        // Fallback to original method
+                        extractedData = PdfParser.ExtractData(currentPdfContent);
+                        txtStatus.Text = "Datos extraídos con método original";
+                    }
+                    
                     DisplayExtractedData(extractedData);
                 }
                 catch (Exception ex)
@@ -1147,15 +1168,38 @@ namespace PdfExtractor
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine("Step 2: Starting data extraction...");
-                txtStatus.Text = "Extrayendo datos estructurados...";
+                System.Diagnostics.Debug.WriteLine("Step 2: Starting data extraction with improved PdfPig...");
+                txtStatus.Text = "Extrayendo datos con PdfPig (método mejorado)...";
                 
                 LoteData extractedData;
                 try
                 {
-                    System.Diagnostics.Debug.WriteLine($"PDF Content length: {currentPdfContent.Length}");
-                    extractedData = PdfParser.ExtractData(currentPdfContent);
-                    System.Diagnostics.Debug.WriteLine("Data extraction completed successfully");
+                    // Use the improved PdfPig extractor like in ExtractDataAutomatically
+                    if (currentPdfData != null && currentPdfData.Length > 0)
+                    {
+                        // Create temporary PDF file for PdfPig
+                        string tempFile = Path.Combine(Path.GetTempPath(), $"pdf_extract_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+                        File.WriteAllBytes(tempFile, currentPdfData);
+                        
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Using PdfPig extractor on temp file: {tempFile}");
+                            extractedData = PdfParser.ExtractDataWithPdfPig(tempFile);
+                            System.Diagnostics.Debug.WriteLine("Data extraction with PdfPig completed successfully");
+                        }
+                        finally
+                        {
+                            // Clean up temporary file
+                            try { File.Delete(tempFile); } catch { }
+                        }
+                    }
+                    else
+                    {
+                        // Fallback to original method if no PDF data
+                        System.Diagnostics.Debug.WriteLine($"Falling back to original method. PDF Content length: {currentPdfContent.Length}");
+                        extractedData = PdfParser.ExtractData(currentPdfContent);
+                        System.Diagnostics.Debug.WriteLine("Data extraction with fallback completed successfully");
+                    }
                     
                     // Mostrar datos extraídos en el panel
                     DisplayExtractedData(extractedData);
@@ -1218,6 +1262,16 @@ namespace PdfExtractor
             // Este método ya no se usa porque los datos se muestran solo en el modal
             // Los datos aparecerán únicamente en la DataReviewWindow
             LogDebug($"Datos extraídos para mostrar en modal: OSM={data.OSM:N2}, MUNI={data.MUNI:N2}");
+            
+            // Log extra debug info
+            System.Diagnostics.Debug.WriteLine($"=== EXTRACTED DATA SUMMARY ===");
+            System.Diagnostics.Debug.WriteLine($"Lote: {data.Lote}");
+            System.Diagnostics.Debug.WriteLine($"Usuario: {data.Usuario}");
+            System.Diagnostics.Debug.WriteLine($"Credito: {data.Credito:N2}");
+            System.Diagnostics.Debug.WriteLine($"Debito: {data.Debito:N2}");
+            System.Diagnostics.Debug.WriteLine($"OSM: {data.OSM:N2}");
+            System.Diagnostics.Debug.WriteLine($"MUNI: {data.MUNI:N2}");
+            System.Diagnostics.Debug.WriteLine($"==============================");
         }
 
         private void BtnConfig_Click(object sender, RoutedEventArgs e)
@@ -2663,5 +2717,7 @@ namespace PdfExtractor
                 return -1;
             }
         }
+
+
     }
 }

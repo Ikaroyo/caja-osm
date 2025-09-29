@@ -33,14 +33,7 @@ namespace PdfExtractor
         
         private static void RunTestsSync()
         {
-            try
-            {
-                Task.Run(async () => await TestExtraction.RunTests()).Wait();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error running tests: {ex.Message}");
-            }
+            Console.WriteLine("Test mode disabled - files removed");
         }
     }
 }

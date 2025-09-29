@@ -1,5 +1,5 @@
 === RESULTADOS DE PRUEBAS DE EXTRACCIÓN ===
-Fecha: 12/9/2025 02:03:10
+Fecha: 29/9/2025 00:22:09
 
 Probando archivo: getjobid484197.pdf
 Valores esperados - Lote: 403279116, OSM: 1478575,98, MUNI: 33016,1, Usuario: CMAGALLANES

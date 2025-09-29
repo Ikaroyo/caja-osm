@@ -28,6 +28,11 @@ D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\M
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\Microsoft.Extensions.Options.dll
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\Microsoft.Extensions.Primitives.dll
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\Newtonsoft.Json.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Core.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Fonts.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Tokenization.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Tokens.dll
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\Microsoft.Web.WebView2.Core.dll
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\Microsoft.Web.WebView2.WinForms.dll
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\Microsoft.Web.WebView2.Wpf.dll
@@ -58,8 +63,5 @@ D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\r
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\PdfExtractor.pdb
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\PdfExtractor.genruntimeconfig.cache
 D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\obj\Debug\net8.0-windows\ref\PdfExtractor.dll
-D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.dll
-D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Core.dll
-D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Fonts.dll
-D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Tokenization.dll
-D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Tokens.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.DocumentLayoutAnalysis.dll
+D:\Users\Ikaros\Desktop\control-caja-osm\PdfExtractor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Package.dll
