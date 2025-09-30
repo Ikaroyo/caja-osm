@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\PdfExtractor.csproj": {}
+    "C:\\Users\\emman\\OneDrive\\Escritorio\\PG\\caja-osm\\PdfExtractor\\PdfExtractor.csproj": {}
   },
   "projects": {
-    "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\PdfExtractor.csproj": {
+    "C:\\Users\\emman\\OneDrive\\Escritorio\\PG\\caja-osm\\PdfExtractor\\PdfExtractor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\PdfExtractor.csproj",
+        "projectUniqueName": "C:\\Users\\emman\\OneDrive\\Escritorio\\PG\\caja-osm\\PdfExtractor\\PdfExtractor.csproj",
         "projectName": "PdfExtractor",
-        "projectPath": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\PdfExtractor.csproj",
-        "packagesPath": "C:\\Users\\Ikaros\\.nuget\\packages\\",
-        "outputPath": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\obj\\",
+        "projectPath": "C:\\Users\\emman\\OneDrive\\Escritorio\\PG\\caja-osm\\PdfExtractor\\PdfExtractor.csproj",
+        "packagesPath": "C:\\Users\\emman\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\emman\\OneDrive\\Escritorio\\PG\\caja-osm\\PdfExtractor\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Ikaros\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\emman\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0-windows"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -89,19 +83,19 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.17, 8.0.17]"
+              "version": "[8.0.20, 8.0.20]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.17, 8.0.17]"
+              "version": "[8.0.20, 8.0.20]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.17, 8.0.17]"
+              "version": "[8.0.20, 8.0.20]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.17, 8.0.17]"
+              "version": "[8.0.20, 8.0.20]"
             }
           ],
           "frameworkReferences": {
@@ -112,7 +106,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.205/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

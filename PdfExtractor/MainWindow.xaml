@@ -29,13 +29,15 @@
         </Border>
 
         <!-- Resizable Splitter -->
-        <GridSplitter Grid.Column="1" 
+        <GridSplitter x:Name="MainGridSplitter"
+                      Grid.Column="1" 
                       HorizontalAlignment="Stretch" 
                       VerticalAlignment="Stretch"
                       Background="LightGray"
                       ShowsPreview="True"
                       ResizeBehavior="PreviousAndNext"
-                      Width="5"/>
+                      Width="5"
+                      DragCompleted="GridSplitter_DragCompleted"/>
 
         <!-- Right Panel: Tabs -->
         <Border Grid.Column="2" BorderBrush="DarkGray" BorderThickness="2" Margin="10">

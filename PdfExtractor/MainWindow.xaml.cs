@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Microsoft.Win32;
 using iText.Kernel.Pdf;
@@ -18,16 +19,19 @@ using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using PdfExtractor.Services;
 using PdfExtractor.Windows;
 using PdfExtractor.Models;
+using PdfExtractor.Modules;
 
 namespace PdfExtractor
 {
     public partial class MainWindow : Window
     {
         private readonly HttpClient httpClient;
+        private readonly ArqueoCajaModule arqueoCajaModule;
+        private WindowLayoutConfig windowLayoutConfig;
+        private bool isInitializationComplete = false;
         private const string BASE_URL = "http://192.168.100.80:7778/reports/rwservlet/getjobid{0}?SERVER=rep_vmo_bck";
         private const string SIGEMI_URL = "http://192.168.100.80:7778/forms/frmservlet?config=sigemi-vmo";
         private const string NOTES_FILE = "quick_notes.txt";
-        private const string CONFIG_FILE = "arqueo_config.txt";
         private string currentPdfContent = "";
         private byte[]? currentPdfData;
         
@@ -49,6 +53,7 @@ namespace PdfExtractor
                 
                 // Log to Debug output
                 System.Diagnostics.Debug.WriteLine(logEntry.Trim());
+                Console.WriteLine(logEntry.Trim()); // Temporary console output for debugging
                 
                 // Log to visual debug window if available
                 if (txtDebugLog != null)
@@ -75,6 +80,20 @@ namespace PdfExtractor
             httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromMinutes(5);
             
+            // Initialize ArqueoCajaModule
+            arqueoCajaModule = new ArqueoCajaModule(LogDebug);
+            
+            // Initialize window layout configuration
+            windowLayoutConfig = WindowLayoutConfig.Load();
+            
+            // Set up event handlers
+            this.Loaded += MainWindow_Loaded;
+            this.ContentRendered += MainWindow_ContentRendered;
+            this.SizeChanged += MainWindow_SizeChanged;
+            
+            // Initialize module after window is loaded
+            this.Loaded += (s, e) => arqueoCajaModule.InitializeControls(this);
+            
             // Debug: Mostrar información de inicio
             LogDebug("=== INICIO DE APLICACIÓN ===");
             LogDebug($"Fecha: {DateTime.Now}");
@@ -89,12 +108,11 @@ namespace PdfExtractor
             // Cargar notas rápidas guardadas
             LoadQuickNotes();
             
-            // Cargar configuración guardada
-            LoadArqueoConfig();
+            // Arqueo configuration loading moved to ArqueoCajaModule
             
             // Delay para asegurar que todos los controles estén inicializados
             Dispatcher.BeginInvoke(new Action(() => {
-                CalculateExpectedTotal();
+                // Total calculation moved to ArqueoCajaModule
             }), System.Windows.Threading.DispatcherPriority.Background);
             
             // Inicializar formulario de datos extraídos
@@ -107,13 +125,273 @@ namespace PdfExtractor
             Dispatcher.BeginInvoke(new Action(() => {
                 try
                 {
-                    CalculateExpectedTotal();
+                // Arqueo total calculation moved to ArqueoCajaModule
                 }
                 catch (Exception ex)
                 {
                     LogDebug($"Error en inicialización de arqueo: {ex.Message}");
                 }
             }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                LogDebug("MainWindow_Loaded - Initial window setup");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error in MainWindow_Loaded: {ex.Message}");
+            }
+        }
+
+        private void MainWindow_ContentRendered(object sender, EventArgs e)
+        {
+            try
+            {
+                // Use Dispatcher.BeginInvoke to ensure layout is fully ready
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    RestoreWindowLayout();
+                    LogDebug("Window layout restored after content rendered via Dispatcher");
+                    
+                    // Also schedule a delayed restore to ensure it takes effect
+                    var timer = new System.Windows.Threading.DispatcherTimer();
+                    timer.Interval = TimeSpan.FromMilliseconds(500);
+                    timer.Tick += (s, args) =>
+                    {
+                        timer.Stop();
+                        RestoreWindowLayoutDelayed();
+                    };
+                    timer.Start();
+                    
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error restoring window layout in ContentRendered: {ex.Message}");
+            }
+        }
+
+        private void RestoreWindowLayoutDelayed()
+        {
+            try
+            {
+                LogDebug($"=== Delayed Layout Restore ===");
+                if (windowLayoutConfig.IsValid())
+                {
+                    if (Content is Grid grid && grid.ColumnDefinitions.Count > 0)
+                    {
+                        var leftColumn = grid.ColumnDefinitions[0];
+                        var targetWidth = windowLayoutConfig.LeftPanelWidth;
+                        
+                        // Respect MinWidth constraint in delayed restore too
+                        var minWidth = leftColumn.MinWidth;
+                        if (targetWidth < minWidth)
+                        {
+                            LogDebug($"Delayed: Target width {targetWidth}px is less than MinWidth {minWidth}px, using MinWidth");
+                            targetWidth = minWidth;
+                        }
+                        
+                        LogDebug($"Delayed restore: Current={leftColumn.ActualWidth}px, Target={targetWidth}px");
+                        
+                        // Force the width with explicit pixel units
+                        leftColumn.Width = new GridLength(targetWidth, GridUnitType.Pixel);
+                        
+                        // Force immediate layout update
+                        grid.UpdateLayout();
+                        
+                        LogDebug($"Delayed restore applied: {leftColumn.Width.Value} {leftColumn.Width.GridUnitType}");
+                    }
+                }
+                
+                // Mark initialization as complete AFTER restoration
+                isInitializationComplete = true;
+                LogDebug("=== Initialization Complete - Auto-save enabled ===");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error in delayed layout restore: {ex.Message}");
+                isInitializationComplete = true; // Enable auto-save even if restoration failed
+            }
+        }
+
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            try
+            {
+                if (!isInitializationComplete)
+                {
+                    LogDebug("SizeChanged during initialization - skipping auto-save");
+                    return;
+                }
+                
+                if (WindowState != System.Windows.WindowState.Minimized)
+                {
+                    SaveCurrentLayout();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error saving layout on size change: {ex.Message}");
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            try
+            {
+                SaveCurrentLayout();
+                LogDebug("Window layout saved on closing");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error saving layout on closing: {ex.Message}");
+            }
+            finally
+            {
+                base.OnClosed(e);
+            }
+        }
+
+        private void RestoreWindowLayout()
+        {
+            try
+            {
+                LogDebug($"=== Starting RestoreWindowLayout ===");
+                LogDebug($"Config values: LeftPanel={windowLayoutConfig.LeftPanelWidth}px, Window={windowLayoutConfig.WindowWidth}x{windowLayoutConfig.WindowHeight}, Maximized={windowLayoutConfig.IsWindowMaximized}");
+                
+                if (windowLayoutConfig.IsValid())
+                {
+                    // Restore window size and state
+                    if (!windowLayoutConfig.IsWindowMaximized)
+                    {
+                        Width = windowLayoutConfig.WindowWidth;
+                        Height = windowLayoutConfig.WindowHeight;
+                        WindowState = System.Windows.WindowState.Normal;
+                        LogDebug($"Window size restored to: {Width}x{Height}");
+                    }
+                    else
+                    {
+                        WindowState = System.Windows.WindowState.Maximized;
+                        LogDebug("Window state set to Maximized");
+                    }
+                    
+                    // Restore splitter position by setting the left column width
+                    if (Content is Grid grid)
+                    {
+                        LogDebug($"Grid found with {grid.ColumnDefinitions.Count} columns");
+                        
+                        if (grid.ColumnDefinitions.Count > 0)
+                        {
+                            var leftColumn = grid.ColumnDefinitions[0];
+                            
+                            // Log current and target values
+                            LogDebug($"Current left column width: {leftColumn.Width.Value} {leftColumn.Width.GridUnitType}");
+                            LogDebug($"Target left column width: {windowLayoutConfig.LeftPanelWidth}px");
+                            
+                            // Set the new width with explicit pixel units
+                            var newWidth = new GridLength(windowLayoutConfig.LeftPanelWidth, GridUnitType.Pixel);
+                            leftColumn.Width = newWidth;
+                            
+                            LogDebug($"Layout restored - Left panel set to: {leftColumn.Width.Value} {leftColumn.Width.GridUnitType}");
+                            
+                            // Force layout update
+                            grid.UpdateLayout();
+                            LogDebug("Grid.UpdateLayout() called");
+                        }
+                        else
+                        {
+                            LogDebug("ERROR: No column definitions found in grid");
+                        }
+                    }
+                    else
+                    {
+                        LogDebug($"ERROR: Content is not a Grid, it's a {Content?.GetType().Name ?? "null"}");
+                    }
+                }
+                else
+                {
+                    LogDebug("Invalid layout config, using defaults");
+                }
+                
+                LogDebug($"=== RestoreWindowLayout Complete ===");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"ERROR in RestoreWindowLayout: {ex.Message}");
+                LogDebug($"Exception details: {ex}");
+            }
+        }
+
+        private void GridSplitter_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            try
+            {
+                LogDebug("GridSplitter drag completed - saving layout...");
+                SaveCurrentLayout();
+                LogDebug("GridSplitter position saved after drag");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error saving layout after splitter drag: {ex.Message}");
+            }
+        }
+
+        private void SaveCurrentLayout()
+        {
+            try
+            {
+                if (!isInitializationComplete)
+                {
+                    LogDebug("SaveCurrentLayout called during initialization - skipping to preserve JSON values");
+                    return;
+                }
+                
+                LogDebug($"=== Starting SaveCurrentLayout ===");
+                
+                if (Content is Grid grid)
+                {
+                    LogDebug($"Grid found with {grid.ColumnDefinitions.Count} columns");
+                    
+                    if (grid.ColumnDefinitions.Count > 0)
+                    {
+                        var leftColumn = grid.ColumnDefinitions[0];
+                        
+                        // Use ActualWidth for accurate current measurements
+                        double leftPanelWidth = leftColumn.ActualWidth;
+                        
+                        LogDebug($"Current ActualWidth: {leftPanelWidth}px");
+                        LogDebug($"Current Width: {leftColumn.Width.Value} {leftColumn.Width.GridUnitType}");
+                        LogDebug($"Previous JSON value: {windowLayoutConfig.LeftPanelWidth}px");
+                        
+                        windowLayoutConfig.LeftPanelWidth = leftPanelWidth;
+                        windowLayoutConfig.WindowWidth = ActualWidth;
+                        windowLayoutConfig.WindowHeight = ActualHeight;
+                        windowLayoutConfig.IsWindowMaximized = WindowState == System.Windows.WindowState.Maximized;
+                        
+                        windowLayoutConfig.Save();
+                        
+                        LogDebug($"Layout saved - Left panel: {windowLayoutConfig.LeftPanelWidth:F0}px, Window: {windowLayoutConfig.WindowWidth:F0}x{windowLayoutConfig.WindowHeight:F0}, Maximized: {windowLayoutConfig.IsWindowMaximized}");
+                    }
+                    else
+                    {
+                        LogDebug("ERROR: No column definitions found in grid during save");
+                    }
+                }
+                else
+                {
+                    LogDebug($"ERROR: Content is not a Grid during save, it's a {Content?.GetType().Name ?? "null"}");
+                }
+                
+                LogDebug($"=== SaveCurrentLayout Complete ===");
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"ERROR in SaveCurrentLayout: {ex.Message}");
+                LogDebug($"Exception details: {ex}");
+            }
         }
 
         private void ExecuteDebugExtraction()
@@ -1872,66 +2150,9 @@ namespace PdfExtractor
             }
         }
         
-        private void LoadArqueoConfig()
-        {
-            try
-            {
-                if (File.Exists(CONFIG_FILE))
-                {
-                    var configData = File.ReadAllText(CONFIG_FILE);
-                    using (var doc = System.Text.Json.JsonDocument.Parse(configData))
-                    {
-                        var root = doc.RootElement;
-                        
-                        // Cargar valores guardados
-                        if (root.TryGetProperty("CajaSeleccionada", out var cajaElement))
-                        {
-                            string caja = cajaElement.GetString() ?? "";
-                            for (int i = 0; i < cmbCajaSelection.Items.Count; i++)
-                            {
-                                if (cmbCajaSelection.Items[i] is ComboBoxItem item && item.Content.ToString() == caja)
-                                {
-                                    cmbCajaSelection.SelectedIndex = i;
-                                    break;
-                                }
-                            }
-                        }
-                            
-                        if (root.TryGetProperty("FechaInicio", out var fechaElement))
-                        {
-                            if (DateTime.TryParse(fechaElement.GetString(), out DateTime fecha))
-                                dpFechaInicial.SelectedDate = fecha;
-                        }
-                        
-                        if (root.TryGetProperty("LoteHoy", out var loteElement))
-                            txtLoteHoy.Text = loteElement.GetString() ?? "";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error cargando configuración: {ex.Message}");
-            }
-        }
+        // Arqueo configuration loading moved to ArqueoCajaModule
 
-        private void SaveArqueoConfig()
-        {
-            try
-            {
-                var config = new
-                {
-                    CajaSeleccionada = cmbCajaSelection.SelectedItem is ComboBoxItem selected ? selected.Content.ToString() : "",
-                    FechaInicio = dpFechaInicial.SelectedDate?.ToString("yyyy-MM-dd"),
-                    LoteHoy = txtLoteHoy.Text
-                };
-                
-                File.WriteAllText(CONFIG_FILE, System.Text.Json.JsonSerializer.Serialize(config));
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error guardando configuración: {ex.Message}");
-            }
-        }
+        // Arqueo configuration saving moved to ArqueoCajaModule
 
         private void BtnPrint_Click(object sender, RoutedEventArgs e)
         {
@@ -1969,27 +2190,11 @@ namespace PdfExtractor
             }
         }
 
-        protected override void OnClosed(EventArgs e)
-        {
-            try
-            {
-                // Guardar notas rápidas antes de cerrar
-                SaveQuickNotes();
-                
-                WebBrowser?.Dispose();
-            }
-            catch { }
-            
-            httpClient?.Dispose();
-            base.OnClosed(e);
-        }
-
         private void DatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
             // Delay calculation to ensure both date pickers are updated
             Dispatcher.BeginInvoke(new Action(() => {
-                CalculateExpectedTotal();
-                SaveArqueoConfig();
+                arqueoCajaModule?.OnDatePickerChanged();
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -1997,8 +2202,7 @@ namespace PdfExtractor
         {
             // Delay calculation to ensure selection is fully updated
             Dispatcher.BeginInvoke(new Action(() => {
-                CalculateExpectedTotal();
-                SaveArqueoConfig();
+                arqueoCajaModule?.OnCajaSelectionChanged();
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
@@ -2006,451 +2210,44 @@ namespace PdfExtractor
         {
             if (sender is TextBox textBox)
             {
-                CalculateCashDenomination(textBox);
-            }
-            CalculateTotals();
-        }
-
-        private void CalculateCashDenomination(TextBox countTextBox)
-        {
-            try
-            {
-                // Determinar qué denominación es basándose en el nombre del control
-                string controlName = countTextBox.Name;
-                int denomination = 0;
-                TextBox totalTextBox = null;
-
-                switch (controlName)
-                {
-                    case "txt20000Count":
-                        denomination = 20000;
-                        totalTextBox = txt20000Total;
-                        break;
-                    case "txt10000Count":
-                        denomination = 10000;
-                        totalTextBox = txt10000Total;
-                        break;
-                    case "txt2000Count":
-                        denomination = 2000;
-                        totalTextBox = txt2000Total;
-                        break;
-                    case "txt1000Count":
-                        denomination = 1000;
-                        totalTextBox = txt1000Total;
-                        break;
-                    case "txt500Count":
-                        denomination = 500;
-                        totalTextBox = txt500Total;
-                        break;
-                    case "txt200Count":
-                        denomination = 200;
-                        totalTextBox = txt200Total;
-                        break;
-                    case "txt100Count":
-                        denomination = 100;
-                        totalTextBox = txt100Total;
-                        break;
-                }
-
-                if (totalTextBox != null)
-                {
-                    double count = EvaluateCountExpression(countTextBox.Text);
-                    if (count >= 0) // Valid expression
-                    {
-                        decimal total = (decimal)count * denomination;
-                        totalTextBox.Text = $"$ {FormatColombianCurrency(total)}";
-                    }
-                    else
-                    {
-                        totalTextBox.Text = "$ 0";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error calculando denominación: {ex.Message}");
+                arqueoCajaModule?.OnCashCountChanged(textBox);
             }
         }
 
-        private void CalculateTotals()
-        {
-            try
-            {
-                decimal totalEfectivo = 0;
+        // Cash denomination calculation moved to ArqueoCajaModule
+        // Arqueo functionality has been modularized
 
-                // Sumar todos los totales de denominaciones
-                totalEfectivo += GetDenominationTotal(txt20000Total);
-                totalEfectivo += GetDenominationTotal(txt10000Total);
-                totalEfectivo += GetDenominationTotal(txt2000Total);
-                totalEfectivo += GetDenominationTotal(txt1000Total);
-                totalEfectivo += GetDenominationTotal(txt500Total);
-                totalEfectivo += GetDenominationTotal(txt200Total);
-                totalEfectivo += GetDenominationTotal(txt100Total);
+        // Total calculation moved to ArqueoCajaModule
 
-                // Agregar valores adicionales
-                totalEfectivo += GetValueFromTextBox(txtValor1);
-                totalEfectivo += GetValueFromTextBox(txtValor2);
-                totalEfectivo += GetValueFromTextBox(txtValor3);
-                totalEfectivo += GetValueFromTextBox(txtValor4);
-                totalEfectivo += GetValueFromTextBox(txtValor5);
+        // Denomination total calculation moved to ArqueoCajaModule
 
-                // Actualizar total contado
-                txtTotalContado.Text = $"$ {FormatColombianCurrency(totalEfectivo)}";
+        // Value parsing moved to ArqueoCajaModule
 
-                // Calcular diferencia
-                decimal esperado = GetValueFromTextBox(txtTotalEsperado);
-                decimal diferencia = totalEfectivo - esperado;
-                txtDiferencia.Text = $"$ {FormatColombianCurrency(diferencia)}";
+        // Expected total calculation moved to ArqueoCajaModule
 
-                // Cambiar color de diferencia según el resultado
-                if (diferencia == 0)
-                {
-                    txtDiferencia.Background = System.Windows.Media.Brushes.LightGreen;
-                }
-                else if (diferencia > 0)
-                {
-                    txtDiferencia.Background = System.Windows.Media.Brushes.LightBlue;
-                }
-                else
-                {
-                    txtDiferencia.Background = System.Windows.Media.Brushes.LightCoral;
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error calculando totales: {ex.Message}");
-            }
-        }
-
-        private decimal GetDenominationTotal(TextBox totalTextBox)
-        {
-            try
-            {
-                string text = totalTextBox.Text.Replace("$", "").Trim();
-                // Manejar formato colombiano: 1,234,567.89
-                if (text.Contains(",") && text.Contains("."))
-                {
-                    // Remover comas (separadores de miles) y mantener punto decimal
-                    text = text.Replace(",", "");
-                }
-                else if (text.Contains(",") && !text.Contains("."))
-                {
-                    // Si solo hay coma y no punto, podría ser decimal español
-                    // Asumir que es separador de miles si el número es grande
-                    if (text.Length > 4) // Ejemplo: 20,000
-                    {
-                        text = text.Replace(",", "");
-                    }
-                    else // Ejemplo: 12,50
-                    {
-                        text = text.Replace(",", ".");
-                    }
-                }
-                return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
-        private decimal GetValueFromTextBox(TextBox textBox)
-        {
-            try
-            {
-                string text = textBox.Text.Replace("$", "").Trim();
-                
-                // First try to evaluate as expression
-                double evaluatedValue = EvaluateCountExpression(text);
-                if (evaluatedValue >= 0) // Valid expression
-                {
-                    return (decimal)evaluatedValue;
-                }
-                
-                // If not a valid expression, try original parsing logic
-                // Manejar formato colombiano: 1,234,567.89
-                if (text.Contains(",") && text.Contains("."))
-                {
-                    // Remover comas (separadores de miles) y mantener punto decimal
-                    text = text.Replace(",", "");
-                }
-                else if (text.Contains(",") && !text.Contains("."))
-                {
-                    // Si solo hay coma y no punto, podría ser decimal español
-                    // Asumir que es separador de miles si el número es grande
-                    if (text.Length > 4) // Ejemplo: 20,000
-                    {
-                        text = text.Replace(",", "");
-                    }
-                    else // Ejemplo: 12,50
-                    {
-                        text = text.Replace(",", ".");
-                    }
-                }
-                return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
-        private void CalculateExpectedTotal()
-        {
-            try
-            {
-                // Verificar que todos los controles estén disponibles
-                if (dpFechaInicial == null || dpFechaFinal == null || cmbCajaSelection == null || txtTotalEsperado == null || txtLoteHoy == null)
-                {
-                    LogDebug("Controles no están inicializados aún");
-                    return;
-                }
-
-                if (dpFechaInicial.SelectedDate == null || dpFechaFinal.SelectedDate == null || cmbCajaSelection.SelectedItem == null)
-                {
-                    LogDebug("Fechas o caja no seleccionadas completamente");
-                    txtTotalEsperado.Text = "0.00";
-                    return;
-                }
-
-                DateTime fechaInicial = dpFechaInicial.SelectedDate.Value;
-                DateTime fechaFinal = dpFechaFinal.SelectedDate.Value;
-                
-                // Validar que la fecha inicial no sea mayor que la final
-                if (fechaInicial > fechaFinal)
-                {
-                    LogDebug("Fecha inicial es mayor que fecha final");
-                    txtTotalEsperado.Text = "0.00";
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightPink;
-                    return;
-                }
-                else
-                {
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
-                }
-
-                string cajaSeleccionada = ((ComboBoxItem)cmbCajaSelection.SelectedItem).Content.ToString() ?? "";
-
-                LogDebug($"Iniciando cálculo: {fechaInicial:dd/MM/yyyy} - {fechaFinal:dd/MM/yyyy} para {cajaSeleccionada}");
-                
-                // Calcular total esperado desde los datos guardados
-                decimal totalEsperado = CalculateExpectedCashFromData(fechaInicial, fechaFinal, cajaSeleccionada);
-                
-                // Agregar el valor de Lote de Hoy
-                decimal loteHoyValue = GetValueFromTextBox(txtLoteHoy);
-                totalEsperado += loteHoyValue;
-                
-                // Actualizar display
-                txtTotalEsperado.Text = FormatColombianCurrency(totalEsperado);
-                LogDebug($"Total esperado actualizado: ${FormatColombianCurrency(totalEsperado)} (incluye Lote de Hoy: ${FormatColombianCurrency(loteHoyValue)})");
-                
-                // Recalcular diferencia
-                CalculateTotals();
-                
-                // Actualizar color de fondo basado en si hay datos
-                if (totalEsperado > 0)
-                {
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightGreen;
-                }
-                else
-                {
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error calculando total esperado: {ex.Message}");
-                if (txtTotalEsperado != null)
-                {
-                    txtTotalEsperado.Text = "Error";
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightCoral;
-                }
-            }
-        }
-
-        private decimal CalculateExpectedCashFromData(DateTime fechaInicial, DateTime fechaFinal, string caja)
-        {
-            try
-            {
-                LogDebug($"Calculando total esperado para {caja} desde {fechaInicial:dd/MM/yyyy} hasta {fechaFinal:dd/MM/yyyy}");
-                
-                // Obtener configuración para ubicación de datos
-                var config = AppConfig.Load();
-                if (string.IsNullOrEmpty(config.SaveLocation))
-                {
-                    LogDebug("No hay ubicación de guardado configurada");
-                    return 0;
-                }
-
-                // Cargar datos guardados
-                var allData = DataService.LoadData(config.SaveLocation);
-                LogDebug($"Datos cargados: {allData.Count} lotes encontrados");
-                
-                if (allData.Count == 0)
-                {
-                    LogDebug("No hay datos guardados para calcular");
-                    return 0;
-                }
-
-                // Filtrar por fechas
-                var filteredByDate = allData.Where(lote => 
-                    lote.Fecha.Date >= fechaInicial.Date && 
-                    lote.Fecha.Date <= fechaFinal.Date).ToList();
-                
-                LogDebug($"Después de filtrar por fechas: {filteredByDate.Count} lotes");
-
-                // Filtrar por caja si no es "Ambas Cajas"
-                List<LoteData> filteredData;
-                if (caja == "Ambas Cajas")
-                {
-                    filteredData = filteredByDate;
-                    LogDebug("Incluyendo ambas cajas");
-                }
-                else
-                {
-                    // Normalizar nombre de caja para comparación
-                    string cajaToMatch = caja.ToUpper().Replace(" ", "");
-                    filteredData = filteredByDate.Where(lote => 
-                        lote.Caja.ToUpper().Replace(" ", "") == cajaToMatch ||
-                        lote.Caja.ToUpper().Contains(cajaToMatch)).ToList();
-                    
-                    LogDebug($"Después de filtrar por caja '{caja}': {filteredData.Count} lotes");
-                }
-
-                // Sumar todos los efectivos
-                decimal totalEfectivo = filteredData.Sum(lote => lote.Efectivo);
-                
-                LogDebug($"Total efectivo calculado: ${totalEfectivo.ToString("N2", new CultureInfo("es-CO"))}");
-                
-                // Mostrar detalles en debug
-                if (filteredData.Count > 0)
-                {
-                    LogDebug("Detalle de lotes incluidos:");
-                    foreach (var lote in filteredData.OrderBy(l => l.Fecha))
-                    {
-                        LogDebug($"  - {lote.FechaString} | {lote.Lote} | {lote.Caja} | Efectivo: ${lote.Efectivo.ToString("N2", new CultureInfo("es-CO"))}");
-                    }
-                }
-                else
-                {
-                    LogDebug("No se encontraron lotes que cumplan los criterios");
-                }
-                
-                return totalEfectivo;
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error calculando total esperado desde datos: {ex.Message}");
-                LogDebug($"StackTrace: {ex.StackTrace}");
-                return 0;
-            }
-        }
+        // Expected cash calculation moved to ArqueoCajaModule
 
         private void BtnLimpiarCalculadora_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Limpiar todos los campos de cantidad
-                txt20000Count.Text = "0";
-                txt10000Count.Text = "0";
-                txt2000Count.Text = "0";
-                txt1000Count.Text = "0";
-                txt500Count.Text = "0";
-                txt200Count.Text = "0";
-                txt100Count.Text = "0";
-
-                // Limpiar valores adicionales
-                txtValor1.Text = "0";
-                txtValor2.Text = "0";
-                txtValor3.Text = "0";
-                txtValor4.Text = "0";
-                txtValor5.Text = "0";
-
-                // Esto automáticamente disparará el recálculo de totales
-                CalculateTotals();
-
-                LogDebug("Calculadora de arqueo limpiada");
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error limpiando calculadora: {ex.Message}");
-            }
+            arqueoCajaModule?.ClearCalculator();
         }
 
         private void BtnActualizarTotal_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                LogDebug("Botón actualizar total presionado - forzando recálculo");
-                CalculateExpectedTotal();
-                
-                // Mostrar mensaje informativo si no hay datos
-                var config = AppConfig.Load();
-                if (string.IsNullOrEmpty(config.SaveLocation))
-                {
-                    MessageBox.Show("Debe configurar una ubicación de guardado primero.\nVaya a Configuración → Config para establecer la carpeta de datos.", 
-                        "Configuración Requerida", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-                
-                var data = DataService.LoadData(config.SaveLocation);
-                if (data.Count == 0)
-                {
-                    MessageBox.Show("No se encontraron datos guardados para calcular el total esperado.\nPrimero debe procesar algunos PDFs para generar datos.", 
-                        "Sin Datos", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    LogDebug($"Total actualizado con {data.Count} lotes en la base de datos");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebug($"Error actualizando total: {ex.Message}");
-                MessageBox.Show($"Error actualizando total: {ex.Message}", "Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            arqueoCajaModule?.UpdateTotal();
         }
 
         private void AdditionalValue_TextChanged(object sender, TextChangedEventArgs e)
         {
-            CalculateTotals();
+            arqueoCajaModule?.OnAdditionalValueChanged();
         }
 
         private void LoteHoy_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (sender is TextBox textBox)
-            {
-                var result = EvaluateCountExpression(textBox.Text);
-                if (result > 0) // Valid expression
-                {
-                    textBox.ToolTip = $"= {FormatColombianCurrency((decimal)result)}";
-                }
-                else
-                {
-                    textBox.ToolTip = null;
-                }
-            }
-            
-            // Recalcular el total esperado (que incluye el lote de hoy)
-            CalculateExpectedTotal();
-            SaveArqueoConfig();
+            arqueoCajaModule?.OnLoteHoyChanged();
         }
 
-        private string FormatColombianCurrency(decimal value)
-        {
-            // Formatear solo con comas como separadores de miles, sin puntos
-            // Para enteros, no mostrar decimales
-            if (value == Math.Floor(value))
-            {
-                return value.ToString("#,##0", CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                // Para decimales, usar coma como decimal
-                return value.ToString("#,##0.00", CultureInfo.InvariantCulture).Replace(".", ",");
-            }
-        }
+        // Colombian currency formatting moved to ArqueoCajaModule
 
         // Calculator functionality
         private void BtnCalc_Click(object sender, RoutedEventArgs e)
