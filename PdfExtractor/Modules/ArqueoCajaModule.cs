@@ -50,6 +50,10 @@ namespace PdfExtractor.Modules
         private TextBox txtValor4;
         private TextBox txtValor5;
 
+        // New total display controls for modern UI
+        private TextBox txtTotalEfectivo;
+        private TextBox txtTotalOtros;
+
         public ArqueoCajaModule(Action<string> logAction)
         {
             this.logAction = logAction ?? (_ => { });
@@ -92,6 +96,10 @@ namespace PdfExtractor.Modules
                 txtValor3 = mainWindow.FindName("txtValor3") as TextBox;
                 txtValor4 = mainWindow.FindName("txtValor4") as TextBox;
                 txtValor5 = mainWindow.FindName("txtValor5") as TextBox;
+
+                // New total display controls for modern UI
+                txtTotalEfectivo = mainWindow.FindName("txtTotalEfectivo") as TextBox;
+                txtTotalOtros = mainWindow.FindName("txtTotalOtros") as TextBox;
 
                 logAction("ArqueoCajaModule inicializado correctamente");
                 LoadArqueoConfig();
@@ -311,8 +319,9 @@ namespace PdfExtractor.Modules
             try
             {
                 decimal totalEfectivo = 0;
+                decimal totalOtrosValores = 0;
 
-                // Sum all denomination totals
+                // Sum all denomination totals (cash only)
                 totalEfectivo += GetDenominationTotal(txt20000Total);
                 totalEfectivo += GetDenominationTotal(txt10000Total);
                 totalEfectivo += GetDenominationTotal(txt2000Total);
@@ -321,20 +330,30 @@ namespace PdfExtractor.Modules
                 totalEfectivo += GetDenominationTotal(txt200Total);
                 totalEfectivo += GetDenominationTotal(txt100Total);
 
-                // Add additional values
-                totalEfectivo += GetValueFromTextBox(txtValor1);
-                totalEfectivo += GetValueFromTextBox(txtValor2);
-                totalEfectivo += GetValueFromTextBox(txtValor3);
-                totalEfectivo += GetValueFromTextBox(txtValor4);
-                totalEfectivo += GetValueFromTextBox(txtValor5);
+                // Sum additional values (other values)
+                totalOtrosValores += GetValueFromTextBox(txtValor1);
+                totalOtrosValores += GetValueFromTextBox(txtValor2);
+                totalOtrosValores += GetValueFromTextBox(txtValor3);
+                totalOtrosValores += GetValueFromTextBox(txtValor4);
+                totalOtrosValores += GetValueFromTextBox(txtValor5);
 
-                // Update total counted
+                // Update the new individual total displays
+                if (txtTotalEfectivo != null)
+                    txtTotalEfectivo.Text = $"$ {FormatColombianCurrency(totalEfectivo)}";
+                
+                if (txtTotalOtros != null)
+                    txtTotalOtros.Text = $"$ {FormatColombianCurrency(totalOtrosValores)}";
+
+                // Calculate combined total for compatibility
+                decimal totalCombinado = totalEfectivo + totalOtrosValores;
+
+                // Update total counted (combined total for existing functionality)
                 if (txtTotalContado != null)
-                    txtTotalContado.Text = $"$ {FormatColombianCurrency(totalEfectivo)}";
+                    txtTotalContado.Text = $"$ {FormatColombianCurrency(totalCombinado)}";
 
                 // Calculate difference
                 decimal esperado = GetValueFromTextBox(txtTotalEsperado);
-                decimal diferencia = totalEfectivo - esperado;
+                decimal diferencia = totalCombinado - esperado;
                 
                 if (txtDiferencia != null)
                 {
@@ -410,54 +429,60 @@ namespace PdfExtractor.Modules
                 // Remove any currency symbols and extra spaces
                 text = text.Replace("$", "").Replace("COP", "").Trim();
 
-                // Handle Colombian format: use comma as thousands separator, period as decimal
-                // Examples: "1,234,567", "1,234,567.89", "420,000"
+                // Handle Spanish format: periods as thousands separators, comma as decimal separator
+                // Examples: "1.234.567", "1.234.567,89", "420.000", "12,50"
                 
                 // Count periods and commas to determine format
-                int commaCount = text.Count(c => c == ',');
                 int periodCount = text.Count(c => c == '.');
+                int commaCount = text.Count(c => c == ',');
                 
-                if (periodCount == 0 && commaCount > 0)
+                if (commaCount == 0 && periodCount > 0)
                 {
-                    // Only commas - these are thousands separators (e.g., "420,000")
-                    text = text.Replace(",", "");
+                    // Only periods - these are thousands separators (e.g., "420.000")
+                    text = text.Replace(".", "");
                     return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
                 }
-                else if (periodCount == 1 && commaCount > 0)
+                else if (commaCount == 1 && periodCount > 0)
                 {
-                    // Both commas and one period - commas are thousands, period is decimal
-                    // e.g., "1,234,567.89"
-                    var parts = text.Split('.');
-                    var integerPart = parts[0].Replace(",", "");
+                    // Both periods and one comma - periods are thousands, comma is decimal
+                    // e.g., "1.234.567,89"
+                    var parts = text.Split(',');
+                    var integerPart = parts[0].Replace(".", "");
                     var decimalPart = parts[1];
                     text = integerPart + "." + decimalPart;
                     return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
                 }
-                else if (periodCount == 0 && commaCount == 1)
+                else if (commaCount == 1 && periodCount == 0)
                 {
-                    // Single comma - could be decimal separator or thousands separator
-                    var parts = text.Split(',');
+                    // Single comma - this is decimal separator (e.g., "12,50")
+                    text = text.Replace(",", ".");
+                    return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
+                }
+                else if (periodCount == 1 && commaCount == 0)
+                {
+                    // Single period - could be decimal separator or thousands separator
+                    var parts = text.Split('.');
                     if (parts[1].Length <= 2)
                     {
-                        // Likely decimal separator (e.g., "12,50")
-                        text = text.Replace(",", ".");
+                        // Likely decimal separator (e.g., "12.50")
                         return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
                     }
                     else
                     {
-                        // Likely thousands separator (e.g., "12,500")
-                        text = text.Replace(",", "");
+                        // Likely thousands separator (e.g., "12.500")
+                        text = text.Replace(".", "");
                         return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
                     }
                 }
                 else
                 {
-                    // Standard format or no separators
+                    // No special characters or multiple commas/periods - parse as is
                     return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) ? value : 0;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                logAction($"Error parsing currency '{text}': {ex.Message}");
                 return 0;
             }
         }
@@ -617,16 +642,21 @@ namespace PdfExtractor.Modules
 
         private string FormatColombianCurrency(decimal value)
         {
-            // Format with commas as thousands separators, no periods
+            // Format with Spanish convention: periods as thousands separators, comma as decimal separator
+            // Examples: 1.234.567 or 1.234.567,89
+            
             // For integers, don't show decimals
             if (value == Math.Floor(value))
             {
-                return value.ToString("#,##0", CultureInfo.InvariantCulture);
+                // Use Spanish culture which naturally handles . for thousands
+                var culture = new CultureInfo("es-ES");
+                return value.ToString("N0", culture);
             }
             else
             {
-                // For decimals, use period as decimal separator (international standard)
-                return value.ToString("#,##0.00", CultureInfo.InvariantCulture);
+                // For decimals, use Spanish format: . for thousands, , for decimals
+                var culture = new CultureInfo("es-ES");
+                return value.ToString("N2", culture);
             }
         }
 
