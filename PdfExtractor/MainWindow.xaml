@@ -28,86 +28,7 @@
     <Border Grid.Column="2" BorderBrush="DarkGray" BorderThickness="2" Margin="10">
       <TabControl x:Name="mainTabControl"
  Background="WhiteSmoke">
-        <!-- PDF Extractor Tab -->
-        <TabItem Header="📄 Extractor PDF" FontWeight="Bold">
-          <Grid Margin="10">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*"/>
-              <RowDefinition Height="200"/>
-            </Grid.RowDefinitions>
-            <!-- PDF Input Section -->
-            <GroupBox Grid.Row="0" Header="Entrada de PDF" Margin="0,0,0,10">
-              <StackPanel Margin="10">
-                <TextBlock Text="Ingrese el link completo o solo el número:" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBox x:Name="txtInput"
- Height="25" Margin="0,0,0,10"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                  <Button x:Name="btnProcess"
- Content="📥 Procesar PDF" Width="140" Height="30" Click="BtnProcess_Click" Margin="0,0,10,0" Background="LightBlue"/>
-                  <Button x:Name="btnClear"
- Content="🗑️ Limpiar" Width="80" Height="30" Click="BtnClear_Click" Background="LightCoral"/>
-                </StackPanel>
-              </StackPanel>
-            </GroupBox>
-            <!-- Management Buttons -->
-            <GroupBox Grid.Row="1" Header="Gestión" Margin="0,0,0,10">
-              <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Left">
-                <Button x:Name="btnViewLotes"
- Content="📋 Ver Lotes" Width="100" Height="30" Click="BtnViewLotes_Click" Margin="0,0,10,0" Background="LightYellow"/>
-              </StackPanel>
-            </GroupBox>
-            <!-- Status -->
-            <TextBlock Grid.Row="2" x:Name="txtStatus"
- Text="Listo" Margin="0,0,0,10" Foreground="Blue" FontWeight="Bold" Background="AliceBlue" Padding="5"/>
-            <!-- Formulario de Extracción - Oculto en vista principal -->
-            <GroupBox Grid.Row="3" Header="📋 Datos Extraídos" Margin="0,0,0,10" MaxHeight="400" Visibility="Collapsed">
-              <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                <Grid x:Name="extractedDataPanel"
- Margin="10">
-                  <!-- Grid content hidden in main view -->
-                </Grid>
-              </ScrollViewer>
-            </GroupBox>
-            <!-- Mensaje informativo en lugar del formulario -->
-            <GroupBox Grid.Row="3" Header="ℹ️ Información" Margin="0,0,0,10">
-              <StackPanel Margin="10">
-                <TextBlock Text="💡 Flujo de trabajo:" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">• Ingrese el número del PDF (ej: 484197) o URL completa</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">• Presione "Procesar PDF" para descargar y extraer datos</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">• Se abrirá una ventana para revisar y confirmar los datos extraídos</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">• Los datos se guardarán automáticamente tras la confirmación</TextBlock>
-                <TextBlock Text="🎯 Los datos extraídos aparecerán en la ventana de revisión, no en esta vista principal." FontStyle="Italic" Foreground="DarkBlue" TextWrapping="Wrap"/>
-              </StackPanel>
-            </GroupBox>
-            <!-- PDF Content Display - Oculto por solicitud del usuario -->
-            <GroupBox Grid.Row="4" Header="Contenido del PDF" Margin="0,0,0,10" Visibility="Collapsed">
-              <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <TextBox x:Name="txtContent"
- IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalAlignment="Stretch" Background="LightYellow" BorderThickness="0"/>
-              </ScrollViewer>
-            </GroupBox>
-            <!-- Quick Actions -->
-            <GroupBox Grid.Row="5" Header="Acciones Rápidas">
-              <Grid Margin="5">
-                <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                  <Button Content="💾 Guardar como..." Width="100" Height="25" Margin="0,0,5,0" Visibility="Collapsed"/>
-                  <Button Content="📧 Enviar por email" Width="120" Height="25" Margin="0,0,5,0" Visibility="Collapsed"/>
-                  <Button Content="🖨️ Imprimir" Width="80" Height="25" Click="BtnPrint_Click"/>
-                </StackPanel>
-                <TextBox Grid.Row="1" x:Name="txtQuickNotes"
- TextWrapping="Wrap" AcceptsReturn="True" Background="LightGray" Text="Notas rápidas..."/>
-              </Grid>
-            </GroupBox>
-          </Grid>
-        </TabItem>
+        
         <!-- Arqueo de Caja Tab -->
         <TabItem Header="💰 Arqueo de Caja" FontWeight="Bold">
           <!-- Modern Sidebar Design with full width and height -->
@@ -177,42 +98,44 @@
                               <RowDefinition Height="Auto"/>
                               <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <!-- Ventas Sistema - blue theme -->
+                            <!-- Total Lotes - blue theme -->
                             <Border Grid.Column="0" Background="#DBEAFE" Padding="8" Margin="0,0,4,4" BorderBrush="#3B82F6" BorderThickness="2">
                               <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="Ventas Sistema" FontSize="9" Foreground="#1E40AF" TextAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock Text="Total Lotes" FontSize="9" Foreground="#1E40AF" TextAlignment="Center" FontWeight="SemiBold"/>
                                 <TextBox x:Name="txtTotalEsperado"
  Text="$ 0" FontSize="12" FontWeight="Bold" Foreground="#1E40AF" Background="Transparent" BorderThickness="0" TextAlignment="Center" IsReadOnly="True"/>
                               </StackPanel>
                             </Border>
-                            <!-- Diferencia - orange theme -->
-                            <Border Grid.Column="1" Background="#FED7AA" Padding="8" Margin="4,0,0,4" BorderBrush="#EA580C" BorderThickness="2">
-                              <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="Diferencia" FontSize="9" Foreground="#C2410C" TextAlignment="Center" FontWeight="SemiBold"/>
-                                <TextBox x:Name="txtDiferencia"
- Text="$ 0" FontSize="12" FontWeight="Bold" Foreground="#C2410C" Background="Transparent" BorderThickness="0" TextAlignment="Center" IsReadOnly="True"/>
-                              </StackPanel>
-                            </Border>
                             <!-- Total Arqueado - green theme -->
-                            <Border Grid.ColumnSpan="2" Grid.Row="1" Background="#D1FAE5" Padding="8" Margin="0,4,0,0" BorderBrush="#10B981" BorderThickness="2">
+                            <Border Grid.Column="1" Background="#D1FAE5" Padding="8" Margin="4,0,0,4" BorderBrush="#10B981" BorderThickness="2">
                               <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="Total Arqueado" FontSize="9" Foreground="#047857" TextAlignment="Center" FontWeight="SemiBold"/>
                                 <TextBox x:Name="txtTotalContado"
  Text="$ 0" FontSize="12" FontWeight="Bold" Foreground="#047857" Background="Transparent" BorderThickness="0" TextAlignment="Center" IsReadOnly="True"/>
                               </StackPanel>
                             </Border>
+                            <!-- Diferencia - dynamic colors -->
+                            <Border Grid.ColumnSpan="2" Grid.Row="1" x:Name="borderDiferencia" Background="#F3F4F6" Padding="8" Margin="0,4,0,0" BorderBrush="#9CA3AF" BorderThickness="2">
+                              <StackPanel HorizontalAlignment="Center">
+                                <TextBlock x:Name="txtDiferenciaLabel" Text="Diferencia" FontSize="9" Foreground="#6B7280" TextAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBox x:Name="txtDiferencia"
+ Text="$ 0" FontSize="12" FontWeight="Bold" Foreground="#6B7280" Background="Transparent" BorderThickness="0" TextAlignment="Center" IsReadOnly="True"/>
+                              </StackPanel>
+                            </Border>
                           </Grid>
                         </StackPanel>
                       </Border>
                       <!-- Cash Counting Section -->
-                      <Border Padding="12">
+                      <Border Padding="0">
                         <StackPanel>
                           <!-- Cash Total Header -->
+                          <!--
                           <Grid Margin="0,0,0,8">
                             <TextBlock Text="Total Efectivo:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
                             <TextBlock x:Name="txtTotalEfectivo"
  Text="$ 0" FontSize="12" FontWeight="Bold" Foreground="#059669" HorizontalAlignment="Right"/>
                           </Grid>
+                          -->
                           <!-- Denomination Fields -->
                           <StackPanel x:Name="DenominationsPanel">
                             <!-- $20,000 -->
@@ -313,53 +236,79 @@
                       <Border BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Background="#F9FAFB" Padding="12">
                         <StackPanel>
                           <!-- Other Values Header -->
+                          <!--
                           <Grid Margin="0,0,0,8">
                             <TextBlock Text="Total Otros:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
                             <TextBlock x:Name="txtTotalOtros"
  Text="$ 0" FontSize="12" FontWeight="Bold" Foreground="#374151" HorizontalAlignment="Right"/>
                           </Grid>
-                          <!-- Other Value Fields -->
-                          <StackPanel>
-                            <!-- Additional Values -->
-                            <Grid Margin="0,0,0,8">
-                              <TextBlock Text="Valor 1" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
-                              <Grid HorizontalAlignment="Right" Width="120">
-                                <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#6B7280"/>
-                                <TextBox x:Name="txtValor1"
- Text="0" FontSize="11" Height="24" BorderBrush="#D1D5DB" Padding="16,0,8,0" TextAlignment="Right" TextChanged="AdditionalValue_TextChanged"/>
-                              </Grid>
+                            -->
+                          <!-- Other Value Fields with editable labels -->
+                          <StackPanel x:Name="OtherValuesPanel">
+                            <!-- Valor 1 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtEtiqueta1" Text="Tarjetas" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" TextChanged="AdditionalLabel_TextChanged"/>
+                              <TextBox Grid.Column="1" x:Name="txtValor1"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="AdditionalValue_TextChanged"/>
+                              <TextBox Grid.Column="2" x:Name="txtValor1Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
                             </Grid>
-                            <Grid Margin="0,0,0,8">
-                              <TextBlock Text="Valor 2" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
-                              <Grid HorizontalAlignment="Right" Width="120">
-                                <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#6B7280"/>
-                                <TextBox x:Name="txtValor2"
- Text="0" FontSize="11" Height="24" BorderBrush="#D1D5DB" Padding="16,0,8,0" TextAlignment="Right" TextChanged="AdditionalValue_TextChanged"/>
-                              </Grid>
+                            <!-- Valor 2 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtEtiqueta2" Text="Cheques" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" TextChanged="AdditionalLabel_TextChanged"/>
+                              <TextBox Grid.Column="1" x:Name="txtValor2"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="AdditionalValue_TextChanged"/>
+                              <TextBox Grid.Column="2" x:Name="txtValor2Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
                             </Grid>
-                            <Grid Margin="0,0,0,8">
-                              <TextBlock Text="Valor 3" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
-                              <Grid HorizontalAlignment="Right" Width="120">
-                                <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#6B7280"/>
-                                <TextBox x:Name="txtValor3"
- Text="0" FontSize="11" Height="24" BorderBrush="#D1D5DB" Padding="16,0,8,0" TextAlignment="Right" TextChanged="AdditionalValue_TextChanged"/>
-                              </Grid>
+                            <!-- Valor 3 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtEtiqueta3" Text="Extracciones" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" TextChanged="AdditionalLabel_TextChanged"/>
+                              <TextBox Grid.Column="1" x:Name="txtValor3"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="AdditionalValue_TextChanged"/>
+                              <TextBox Grid.Column="2" x:Name="txtValor3Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
                             </Grid>
-                            <Grid Margin="0,0,0,8">
-                              <TextBlock Text="Valor 4" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
-                              <Grid HorizontalAlignment="Right" Width="120">
-                                <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#6B7280"/>
-                                <TextBox x:Name="txtValor4"
- Text="0" FontSize="11" Height="24" BorderBrush="#D1D5DB" Padding="16,0,8,0" TextAlignment="Right" TextChanged="AdditionalValue_TextChanged"/>
-                              </Grid>
+                            <!-- Valor 4 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtEtiqueta4" Text="Otros" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" TextChanged="AdditionalLabel_TextChanged"/>
+                              <TextBox Grid.Column="1" x:Name="txtValor4"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="AdditionalValue_TextChanged"/>
+                              <TextBox Grid.Column="2" x:Name="txtValor4Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
                             </Grid>
+                            <!-- Valor 5 -->
                             <Grid>
-                              <TextBlock Text="Valor 5" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
-                              <Grid HorizontalAlignment="Right" Width="120">
-                                <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#6B7280"/>
-                                <TextBox x:Name="txtValor5"
- Text="0" FontSize="11" Height="24" BorderBrush="#D1D5DB" Padding="16,0,8,0" TextAlignment="Right" TextChanged="AdditionalValue_TextChanged"/>
-                              </Grid>
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtEtiqueta5" Text="Varios" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" TextChanged="AdditionalLabel_TextChanged"/>
+                              <TextBox Grid.Column="1" x:Name="txtValor5"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="AdditionalValue_TextChanged"/>
+                              <TextBox Grid.Column="2" x:Name="txtValor5Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
                             </Grid>
                           </StackPanel>
                         </StackPanel>
@@ -466,6 +415,87 @@
             </GroupBox>
           </Grid>
         </TabItem>
+        <!-- PDF Extractor Tab -->
+        <TabItem Header="📄 Extractor PDF" FontWeight="Bold">
+          <Grid Margin="10">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+              <RowDefinition Height="200"/>
+            </Grid.RowDefinitions>
+            <!-- PDF Input Section -->
+            <GroupBox Grid.Row="0" Header="Entrada de PDF" Margin="0,0,0,10">
+              <StackPanel Margin="10">
+                <TextBlock Text="Ingrese el link completo o solo el número:" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtInput"
+ Height="25" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                  <Button x:Name="btnProcess"
+ Content="📥 Procesar PDF" Width="140" Height="30" Click="BtnProcess_Click" Margin="0,0,10,0" Background="LightBlue"/>
+                  <Button x:Name="btnClear"
+ Content="🗑️ Limpiar" Width="80" Height="30" Click="BtnClear_Click" Background="LightCoral"/>
+                </StackPanel>
+              </StackPanel>
+            </GroupBox>
+            <!-- Management Buttons -->
+            <GroupBox Grid.Row="1" Header="Gestión" Margin="0,0,0,10">
+              <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Left">
+                <Button x:Name="btnViewLotes"
+ Content="📋 Ver Lotes" Width="100" Height="30" Click="BtnViewLotes_Click" Margin="0,0,10,0" Background="LightYellow"/>
+              </StackPanel>
+            </GroupBox>
+            <!-- Status -->
+            <TextBlock Grid.Row="2" x:Name="txtStatus"
+ Text="Listo" Margin="0,0,0,10" Foreground="Blue" FontWeight="Bold" Background="AliceBlue" Padding="5"/>
+            <!-- Formulario de Extracción - Oculto en vista principal -->
+            <GroupBox Grid.Row="3" Header="📋 Datos Extraídos" Margin="0,0,0,10" MaxHeight="400" Visibility="Collapsed">
+              <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <Grid x:Name="extractedDataPanel"
+ Margin="10">
+                  <!-- Grid content hidden in main view -->
+                </Grid>
+              </ScrollViewer>
+            </GroupBox>
+            <!-- Mensaje informativo en lugar del formulario -->
+            <GroupBox Grid.Row="3" Header="ℹ️ Información" Margin="0,0,0,10">
+              <StackPanel Margin="10">
+                <TextBlock Text="💡 Flujo de trabajo:" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">• Ingrese el número del PDF (ej: 484197) o URL completa</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">• Presione "Procesar PDF" para descargar y extraer datos</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">• Se abrirá una ventana para revisar y confirmar los datos extraídos</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">• Los datos se guardarán automáticamente tras la confirmación</TextBlock>
+                <TextBlock Text="🎯 Los datos extraídos aparecerán en la ventana de revisión, no en esta vista principal." FontStyle="Italic" Foreground="DarkBlue" TextWrapping="Wrap"/>
+              </StackPanel>
+            </GroupBox>
+            <!-- PDF Content Display - Oculto por solicitud del usuario -->
+            <GroupBox Grid.Row="4" Header="Contenido del PDF" Margin="0,0,0,10" Visibility="Collapsed">
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBox x:Name="txtContent"
+ IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalAlignment="Stretch" Background="LightYellow" BorderThickness="0"/>
+              </ScrollViewer>
+            </GroupBox>
+            <!-- Quick Actions -->
+            <GroupBox Grid.Row="5" Header="Acciones Rápidas">
+              <Grid Margin="5">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                  <Button Content="💾 Guardar como..." Width="100" Height="25" Margin="0,0,5,0" Visibility="Collapsed"/>
+                  <Button Content="📧 Enviar por email" Width="120" Height="25" Margin="0,0,5,0" Visibility="Collapsed"/>
+                  <Button Content="🖨️ Imprimir" Width="80" Height="25" Click="BtnPrint_Click"/>
+                </StackPanel>
+                <TextBox Grid.Row="1" x:Name="txtQuickNotes"
+ TextWrapping="Wrap" AcceptsReturn="True" Background="LightGray" Text="Notas rápidas..."/>
+              </Grid>
+            </GroupBox>
+          </Grid>
+        </TabItem>
+        
         <!-- Additional Tools Tab -->
         <TabItem Header="⚙️ Configuraciones" FontWeight="Bold">
           <Grid Margin="10">
@@ -492,7 +522,7 @@
           </Grid>
         </TabItem>
         <!-- Debug Tab -->
-        <TabItem Header="🐛 Debug" FontWeight="Bold" Background="Orange" Visibility="Collapsed">
+        <TabItem Header="🐛 Debug" FontWeight="Bold" Background="Orange">
           <Grid Margin="10">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto"/>
@@ -507,6 +537,8 @@
  Content="🔄 Test Nav" Width="80" Height="30" Click="BtnTestNav_Click" Margin="0,0,10,0" Background="Blue" Foreground="White"/>
                   <Button x:Name="btnCheckBrowser"
  Content="🔍 Check" Width="80" Height="30" Click="BtnCheckBrowser_Click" Margin="0,0,10,0" Background="Green" Foreground="White"/>
+                  <Button x:Name="btnDebugPdf"
+ Content="📄 PDF Debug" Width="90" Height="30" Click="BtnDebugPdf_Click" Margin="0,0,10,0" Background="Crimson" Foreground="White"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <Button x:Name="btnForceJava"

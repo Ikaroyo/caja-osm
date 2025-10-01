@@ -3,8 +3,12 @@
   "WorkspaceRootPath": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\services\\javacompatibilityhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|solutionrelative:pdfextractor\\services\\javacompatibilityhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|solutionrelative:pdfextractor\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\windows\\loteslistwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|solutionrelative:pdfextractor\\windows\\loteslistwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -13,14 +17,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|solutionrelative:pdfextractor\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|solutionrelative:pdfextractor\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\windows\\loteslistwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|solutionrelative:pdfextractor\\windows\\loteslistwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{12345678-1234-1234-1234-123456789012}|PdfExtractor\\PdfExtractor.csproj|d:\\users\\ikaros\\desktop\\control-caja-osm\\pdfextractor\\models\\lotedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -41,59 +37,49 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "JavaCompatibilityHelper.cs",
-              "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\Services\\JavaCompatibilityHelper.cs",
-              "RelativeDocumentMoniker": "PdfExtractor\\Services\\JavaCompatibilityHelper.cs",
-              "ToolTip": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\Services\\JavaCompatibilityHelper.cs",
-              "RelativeToolTip": "PdfExtractor\\Services\\JavaCompatibilityHelper.cs",
-              "ViewState": "AgIAAEUAAAAAAAAAAAAkwFsAAAAvAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T04:37:11.76Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "App.xaml.cs",
               "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\App.xaml.cs",
               "RelativeDocumentMoniker": "PdfExtractor\\App.xaml.cs",
               "ToolTip": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\App.xaml.cs",
               "RelativeToolTip": "PdfExtractor\\App.xaml.cs",
-              "ViewState": "AgIAAAEAAAAAAAAAAAAswBgAAABNAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T04:35:01.44Z"
+              "WhenOpened": "2025-09-08T04:35:01.44Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\MainWindow.xaml",
               "RelativeDocumentMoniker": "PdfExtractor\\MainWindow.xaml",
               "ToolTip": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\MainWindow.xaml",
               "RelativeToolTip": "PdfExtractor\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-09-08T04:32:33.575Z"
+              "WhenOpened": "2025-09-08T04:32:33.575Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "MainWindow.xaml.cs",
               "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "PdfExtractor\\MainWindow.xaml.cs",
               "ToolTip": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\MainWindow.xaml.cs",
               "RelativeToolTip": "PdfExtractor\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAHsCAAAAAAAAAAAYwJ4CAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T04:21:32.21Z"
+              "WhenOpened": "2025-09-08T04:21:32.21Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "LotesListWindow.xaml.cs",
               "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\Windows\\LotesListWindow.xaml.cs",
               "RelativeDocumentMoniker": "PdfExtractor\\Windows\\LotesListWindow.xaml.cs",
@@ -101,11 +87,12 @@
               "RelativeToolTip": "PdfExtractor\\Windows\\LotesListWindow.xaml.cs",
               "ViewState": "AgIAACUAAAAAAAAAAAAkwEIAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T04:08:04.466Z"
+              "WhenOpened": "2025-09-08T04:08:04.466Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 4,
               "Title": "LoteData.cs",
               "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\Models\\LoteData.cs",
               "RelativeDocumentMoniker": "PdfExtractor\\Models\\LoteData.cs",
@@ -117,7 +104,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
               "Title": "DataReviewWindow.xaml.cs",
               "DocumentMoniker": "D:\\Users\\Ikaros\\Desktop\\control-caja-osm\\PdfExtractor\\Windows\\DataReviewWindow.xaml.cs",
               "RelativeDocumentMoniker": "PdfExtractor\\Windows\\DataReviewWindow.xaml.cs",
@@ -129,7 +116,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 6,
               "Title": "Microsoft.WinFX.targets",
               "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\9.0.205\\Sdks\\Microsoft.NET.Sdk.WindowsDesktop\\targets\\Microsoft.WinFX.targets",
               "ToolTip": "C:\\Program Files\\dotnet\\sdk\\9.0.205\\Sdks\\Microsoft.NET.Sdk.WindowsDesktop\\targets\\Microsoft.WinFX.targets",

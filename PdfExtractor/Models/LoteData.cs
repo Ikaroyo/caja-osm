@@ -19,6 +19,7 @@ namespace PdfExtractor.Models
         private string _usuario = ""; // Nueva propiedad
         private bool _depositado = false; // Nueva propiedad
         private string _observaciones = ""; // Campo Observaciones
+        private int _totalRecibosMuni = 0; // Cantidad de recibos MUNI
 
         public string Dia
         {
@@ -64,6 +65,12 @@ namespace PdfExtractor.Models
         {
             get => _observaciones;
             set { _observaciones = value; OnPropertyChanged(nameof(Observaciones)); }
+        }
+
+        public int TotalRecibosMuni
+        {
+            get => _totalRecibosMuni;
+            set { _totalRecibosMuni = value; OnPropertyChanged(nameof(TotalRecibosMuni)); }
         }
 
         // Notificar cambios en todas las propiedades formateadas cuando cambian los valores base
@@ -215,6 +222,7 @@ namespace PdfExtractor.Models
                 _usuario = "";
                 _depositado = false;
                 _observaciones = ""; // Inicializar observaciones
+                _totalRecibosMuni = 0; // Inicializar cantidad recibos MUNI
                 System.Diagnostics.Debug.WriteLine("LoteData constructor completed successfully");
             }
             catch (Exception ex)

@@ -1,1 +1,1 @@
-{"CajaSeleccionada":"Caja 1","FechaInicio":"2025-09-20","LoteHoy":"0"}
+{"CajaSeleccionada":"CAJA 2","FechaInicio":"2025-09-01","LoteHoy":"","Etiqueta1":"Tarjetas","Etiqueta2":"Cheques","Etiqueta3":"Extracciones","Etiqueta4":"Otros","Etiqueta5":"Varios","Valor1":"0","Valor2":"0","Valor3":"0","Valor4":"0","Valor5":"0"}

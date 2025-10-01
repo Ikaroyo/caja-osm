@@ -21,3 +21,7 @@ obj/
 
 # Ignora example
 example/
+
+# Ignorar PdfExtractor binarios
+PdfExtractor/bin/
+PdfExtractor/obj/

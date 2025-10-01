@@ -24,6 +24,8 @@ namespace PdfExtractor.Modules
         private TextBox txtTotalEsperado;
         private TextBox txtTotalContado;
         private TextBox txtDiferencia;
+        private System.Windows.Controls.Border borderDiferencia;
+        private TextBlock txtDiferenciaLabel;
 
         // Cash denomination controls
         private TextBox txt20000Count;
@@ -50,6 +52,20 @@ namespace PdfExtractor.Modules
         private TextBox txtValor4;
         private TextBox txtValor5;
 
+        // Additional value totals
+        private TextBox txtValor1Total;
+        private TextBox txtValor2Total;
+        private TextBox txtValor3Total;
+        private TextBox txtValor4Total;
+        private TextBox txtValor5Total;
+
+        // Additional value labels
+        private TextBox txtEtiqueta1;
+        private TextBox txtEtiqueta2;
+        private TextBox txtEtiqueta3;
+        private TextBox txtEtiqueta4;
+        private TextBox txtEtiqueta5;
+
         // New total display controls for modern UI
         private TextBox txtTotalEfectivo;
         private TextBox txtTotalOtros;
@@ -71,6 +87,8 @@ namespace PdfExtractor.Modules
                 txtTotalEsperado = mainWindow.FindName("txtTotalEsperado") as TextBox;
                 txtTotalContado = mainWindow.FindName("txtTotalContado") as TextBox;
                 txtDiferencia = mainWindow.FindName("txtDiferencia") as TextBox;
+                borderDiferencia = mainWindow.FindName("borderDiferencia") as System.Windows.Controls.Border;
+                txtDiferenciaLabel = mainWindow.FindName("txtDiferenciaLabel") as TextBlock;
 
                 // Cash denomination count controls
                 txt20000Count = mainWindow.FindName("txt20000Count") as TextBox;
@@ -96,6 +114,20 @@ namespace PdfExtractor.Modules
                 txtValor3 = mainWindow.FindName("txtValor3") as TextBox;
                 txtValor4 = mainWindow.FindName("txtValor4") as TextBox;
                 txtValor5 = mainWindow.FindName("txtValor5") as TextBox;
+
+                // Additional value totals
+                txtValor1Total = mainWindow.FindName("txtValor1Total") as TextBox;
+                txtValor2Total = mainWindow.FindName("txtValor2Total") as TextBox;
+                txtValor3Total = mainWindow.FindName("txtValor3Total") as TextBox;
+                txtValor4Total = mainWindow.FindName("txtValor4Total") as TextBox;
+                txtValor5Total = mainWindow.FindName("txtValor5Total") as TextBox;
+
+                // Additional value labels
+                txtEtiqueta1 = mainWindow.FindName("txtEtiqueta1") as TextBox;
+                txtEtiqueta2 = mainWindow.FindName("txtEtiqueta2") as TextBox;
+                txtEtiqueta3 = mainWindow.FindName("txtEtiqueta3") as TextBox;
+                txtEtiqueta4 = mainWindow.FindName("txtEtiqueta4") as TextBox;
+                txtEtiqueta5 = mainWindow.FindName("txtEtiqueta5") as TextBox;
 
                 // New total display controls for modern UI
                 txtTotalEfectivo = mainWindow.FindName("txtTotalEfectivo") as TextBox;
@@ -141,6 +173,7 @@ namespace PdfExtractor.Modules
             try
             {
                 CalculateCashDenomination(countTextBox);
+                UpdateCashTooltips();
                 CalculateTotals();
             }
             catch (Exception ex)
@@ -149,11 +182,29 @@ namespace PdfExtractor.Modules
             }
         }
 
+        public void OnLabelChanged()
+        {
+            try
+            {
+                SaveArqueoConfig();
+            }
+            catch (Exception ex)
+            {
+                logAction($"Error en Label changed: {ex.Message}");
+            }
+        }
+
         public void OnAdditionalValueChanged()
         {
             try
             {
+                // Calculate individual totals for additional values
+                CalculateAdditionalValueTotals();
+                // Update tooltips for additional value calculations
+                UpdateAdditionalValueTooltips();
                 CalculateTotals();
+                // Save configuration
+                SaveArqueoConfig();
             }
             catch (Exception ex)
             {
@@ -330,12 +381,12 @@ namespace PdfExtractor.Modules
                 totalEfectivo += GetDenominationTotal(txt200Total);
                 totalEfectivo += GetDenominationTotal(txt100Total);
 
-                // Sum additional values (other values)
-                totalOtrosValores += GetValueFromTextBox(txtValor1);
-                totalOtrosValores += GetValueFromTextBox(txtValor2);
-                totalOtrosValores += GetValueFromTextBox(txtValor3);
-                totalOtrosValores += GetValueFromTextBox(txtValor4);
-                totalOtrosValores += GetValueFromTextBox(txtValor5);
+                // Sum additional values (other values) from their totals
+                totalOtrosValores += GetDenominationTotal(txtValor1Total);
+                totalOtrosValores += GetDenominationTotal(txtValor2Total);
+                totalOtrosValores += GetDenominationTotal(txtValor3Total);
+                totalOtrosValores += GetDenominationTotal(txtValor4Total);
+                totalOtrosValores += GetDenominationTotal(txtValor5Total);
 
                 // Update the new individual total displays
                 if (txtTotalEfectivo != null)
@@ -359,19 +410,8 @@ namespace PdfExtractor.Modules
                 {
                     txtDiferencia.Text = $"$ {FormatColombianCurrency(diferencia)}";
 
-                    // Change difference color based on result
-                    if (diferencia == 0)
-                    {
-                        txtDiferencia.Background = System.Windows.Media.Brushes.LightGreen;
-                    }
-                    else if (diferencia > 0)
-                    {
-                        txtDiferencia.Background = System.Windows.Media.Brushes.LightBlue;
-                    }
-                    else
-                    {
-                        txtDiferencia.Background = System.Windows.Media.Brushes.LightCoral;
-                    }
+                    // Update difference colors and text to show if it's surplus or deficit
+                    UpdateDifferenceDisplay(diferencia);
                 }
             }
             catch (Exception ex)
@@ -515,12 +555,12 @@ namespace PdfExtractor.Modules
                 {
                     logAction("Fecha inicial es mayor que fecha final");
                     txtTotalEsperado.Text = "0.00";
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightPink;
+                    //txtTotalEsperado.Background = System.Windows.Media.Brushes.LightPink;
                     return;
                 }
                 else
                 {
-                    txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
+                    //txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
                 }
 
                 string cajaSeleccionada = ((ComboBoxItem)cmbCajaSelection.SelectedItem).Content.ToString() ?? "";
@@ -542,6 +582,7 @@ namespace PdfExtractor.Modules
                 CalculateTotals();
 
                 // Update background color based on whether there's data
+                /*
                 if (totalEsperado > 0)
                 {
                     txtTotalEsperado.Background = System.Windows.Media.Brushes.LightGreen;
@@ -550,6 +591,7 @@ namespace PdfExtractor.Modules
                 {
                     txtTotalEsperado.Background = System.Windows.Media.Brushes.LightYellow;
                 }
+                */
             }
             catch (Exception ex)
             {
@@ -737,6 +779,30 @@ namespace PdfExtractor.Modules
 
                         if (root.TryGetProperty("LoteHoy", out var loteElement) && txtLoteHoy != null)
                             txtLoteHoy.Text = loteElement.GetString() ?? "";
+
+                        // Load additional value labels
+                        if (root.TryGetProperty("Etiqueta1", out var etiq1) && txtEtiqueta1 != null)
+                            txtEtiqueta1.Text = etiq1.GetString() ?? "Tarjetas";
+                        if (root.TryGetProperty("Etiqueta2", out var etiq2) && txtEtiqueta2 != null)
+                            txtEtiqueta2.Text = etiq2.GetString() ?? "Cheques";
+                        if (root.TryGetProperty("Etiqueta3", out var etiq3) && txtEtiqueta3 != null)
+                            txtEtiqueta3.Text = etiq3.GetString() ?? "Transferencias";
+                        if (root.TryGetProperty("Etiqueta4", out var etiq4) && txtEtiqueta4 != null)
+                            txtEtiqueta4.Text = etiq4.GetString() ?? "Otros";
+                        if (root.TryGetProperty("Etiqueta5", out var etiq5) && txtEtiqueta5 != null)
+                            txtEtiqueta5.Text = etiq5.GetString() ?? "Varios";
+
+                        // Load additional values
+                        if (root.TryGetProperty("Valor1", out var val1) && txtValor1 != null)
+                            txtValor1.Text = val1.GetString() ?? "0";
+                        if (root.TryGetProperty("Valor2", out var val2) && txtValor2 != null)
+                            txtValor2.Text = val2.GetString() ?? "0";
+                        if (root.TryGetProperty("Valor3", out var val3) && txtValor3 != null)
+                            txtValor3.Text = val3.GetString() ?? "0";
+                        if (root.TryGetProperty("Valor4", out var val4) && txtValor4 != null)
+                            txtValor4.Text = val4.GetString() ?? "0";
+                        if (root.TryGetProperty("Valor5", out var val5) && txtValor5 != null)
+                            txtValor5.Text = val5.GetString() ?? "0";
                     }
                 }
             }
@@ -754,7 +820,19 @@ namespace PdfExtractor.Modules
                 {
                     CajaSeleccionada = cmbCajaSelection?.SelectedItem is ComboBoxItem selected ? selected.Content.ToString() : "",
                     FechaInicio = dpFechaInicial?.SelectedDate?.ToString("yyyy-MM-dd"),
-                    LoteHoy = txtLoteHoy?.Text ?? ""
+                    LoteHoy = txtLoteHoy?.Text ?? "",
+                    // Save additional value labels
+                    Etiqueta1 = txtEtiqueta1?.Text ?? "Tarjetas",
+                    Etiqueta2 = txtEtiqueta2?.Text ?? "Cheques",
+                    Etiqueta3 = txtEtiqueta3?.Text ?? "Transferencias",
+                    Etiqueta4 = txtEtiqueta4?.Text ?? "Otros",
+                    Etiqueta5 = txtEtiqueta5?.Text ?? "Varios",
+                    // Save additional values
+                    Valor1 = txtValor1?.Text ?? "0",
+                    Valor2 = txtValor2?.Text ?? "0",
+                    Valor3 = txtValor3?.Text ?? "0",
+                    Valor4 = txtValor4?.Text ?? "0",
+                    Valor5 = txtValor5?.Text ?? "0"
                 };
 
                 File.WriteAllText(CONFIG_FILE, JsonSerializer.Serialize(config));
@@ -762,6 +840,168 @@ namespace PdfExtractor.Modules
             catch (Exception ex)
             {
                 logAction($"Error guardando configuración: {ex.Message}");
+            }
+        }
+
+        private void UpdateDifferenceDisplay(decimal diferencia)
+        {
+            try
+            {
+                if (borderDiferencia != null && txtDiferenciaLabel != null && txtDiferencia != null)
+                {
+                    if (diferencia == 0)
+                    {
+                        // Perfect balance - green
+                        borderDiferencia.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(209, 250, 229)); // #D1FAE5
+                        borderDiferencia.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129)); // #10B981
+                        txtDiferenciaLabel.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(4, 120, 87)); // #047857
+                        txtDiferencia.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(4, 120, 87)); // #047857
+                        txtDiferenciaLabel.Text = "✅ Balanceado";
+                    }
+                    else if (diferencia > 0)
+                    {
+                        // Surplus - blue
+                        borderDiferencia.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(219, 234, 254)); // #DBEAFE
+                        borderDiferencia.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(59, 130, 246)); // #3B82F6
+                        txtDiferenciaLabel.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 64, 175)); // #1E40AF
+                        txtDiferencia.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 64, 175)); // #1E40AF
+                        txtDiferenciaLabel.Text = "💰 Sobrante";
+                    }
+                    else
+                    {
+                        // Deficit - red
+                        borderDiferencia.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(254, 226, 226)); // #FEE2E2
+                        borderDiferencia.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68)); // #EF4444
+                        txtDiferenciaLabel.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(185, 28, 28)); // #B91C1C
+                        txtDiferencia.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(185, 28, 28)); // #B91C1C
+                        txtDiferenciaLabel.Text = "⚠️ Faltante";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logAction($"Error actualizando colores de diferencia: {ex.Message}");
+            }
+        }
+
+        private void CalculateAdditionalValueTotals()
+        {
+            try
+            {
+                // Calculate individual totals for each additional value
+                CalculateAdditionalValueTotal(txtValor1, txtValor1Total);
+                CalculateAdditionalValueTotal(txtValor2, txtValor2Total);
+                CalculateAdditionalValueTotal(txtValor3, txtValor3Total);
+                CalculateAdditionalValueTotal(txtValor4, txtValor4Total);
+                CalculateAdditionalValueTotal(txtValor5, txtValor5Total);
+            }
+            catch (Exception ex)
+            {
+                logAction($"Error calculando subtotales de valores adicionales: {ex.Message}");
+            }
+        }
+
+        private void CalculateAdditionalValueTotal(TextBox valueTextBox, TextBox totalTextBox)
+        {
+            try
+            {
+                if (valueTextBox != null && totalTextBox != null)
+                {
+                    double value = EvaluateCountExpression(valueTextBox.Text);
+                    if (value >= 0) // Valid expression
+                    {
+                        decimal total = (decimal)value;
+                        totalTextBox.Text = $"$ {FormatColombianCurrency(total)}";
+                    }
+                    else
+                    {
+                        totalTextBox.Text = "$ 0";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logAction($"Error calculando subtotal de valor adicional: {ex.Message}");
+            }
+        }
+
+        private void UpdateCashTooltips()
+        {
+            try
+            {
+                // Update tooltips for cash denomination fields
+                UpdateTooltipForCountField(txt20000Count);
+                UpdateTooltipForCountField(txt10000Count);
+                UpdateTooltipForCountField(txt2000Count);
+                UpdateTooltipForCountField(txt1000Count);
+                UpdateTooltipForCountField(txt500Count);
+                UpdateTooltipForCountField(txt200Count);
+                UpdateTooltipForCountField(txt100Count);
+            }
+            catch (Exception ex)
+            {
+                logAction($"Error actualizando tooltips de efectivo: {ex.Message}");
+            }
+        }
+
+        private void UpdateAdditionalValueTooltips()
+        {
+            try
+            {
+                // Update tooltips for additional value fields
+                UpdateTooltipForValueField(txtValor1);
+                UpdateTooltipForValueField(txtValor2);
+                UpdateTooltipForValueField(txtValor3);
+                UpdateTooltipForValueField(txtValor4);
+                UpdateTooltipForValueField(txtValor5);
+            }
+            catch (Exception ex)
+            {
+                logAction($"Error actualizando tooltips de valores adicionales: {ex.Message}");
+            }
+        }
+
+        private void UpdateTooltipForCountField(TextBox textBox)
+        {
+            if (textBox == null) return;
+            
+            try
+            {
+                double result = EvaluateCountExpression(textBox.Text);
+                if (result >= 0 && textBox.Text.Contains("*") || textBox.Text.Contains("+") || textBox.Text.Contains("-") || textBox.Text.Contains("/"))
+                {
+                    textBox.ToolTip = $"= {FormatColombianCurrency((decimal)result)}";
+                }
+                else
+                {
+                    textBox.ToolTip = null;
+                }
+            }
+            catch
+            {
+                textBox.ToolTip = null;
+            }
+        }
+
+        private void UpdateTooltipForValueField(TextBox textBox)
+        {
+            if (textBox == null) return;
+            
+            try
+            {
+                double result = EvaluateCountExpression(textBox.Text);
+                if (result >= 0 && (textBox.Text.Contains("*") || textBox.Text.Contains("+") || textBox.Text.Contains("-") || textBox.Text.Contains("/")))
+                {
+                    textBox.ToolTip = $"= ${FormatColombianCurrency((decimal)result)}";
+                }
+                else
+                {
+                    textBox.ToolTip = null;
+                }
+            }
+            catch
+            {
+                textBox.ToolTip = null;
             }
         }
     }

@@ -20,7 +20,9 @@ namespace PdfExtractor.Windows
                 // Cargar configuración de caja
                 var config = AppConfig.Load();
                 Data.Caja = config.CajaSeleccionada;
-                chkCaja2.IsChecked = (config.CajaSeleccionada == "CAJA 2");
+                
+                // Configurar ComboBox de caja
+                cmbCajaSelection.SelectedIndex = (config.CajaSeleccionada == "CAJA 2") ? 1 : 0;
                 
                 // Si no hay cheque, mostrar opción para ingreso manual
                 if (Data.Cheque == 0 || true)
@@ -37,14 +39,17 @@ namespace PdfExtractor.Windows
             }
         }
 
-        private void ChkCaja_Changed(object sender, RoutedEventArgs e)
+        private void CmbCaja_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            Data.Caja = chkCaja2.IsChecked == true ? "CAJA 2" : "CAJA 1";
-            
-            // Guardar preferencia
-            var config = AppConfig.Load();
-            config.CajaSeleccionada = Data.Caja;
-            config.Save();
+            if (cmbCajaSelection.SelectedItem is System.Windows.Controls.ComboBoxItem selectedItem)
+            {
+                Data.Caja = selectedItem.Tag.ToString() ?? "CAJA 1";
+                
+                // Guardar preferencia
+                var config = AppConfig.Load();
+                config.CajaSeleccionada = Data.Caja;
+                config.Save();
+            }
         }
 
         private void ChkIngresarCheque_Checked(object sender, RoutedEventArgs e)

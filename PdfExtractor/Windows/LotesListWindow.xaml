@@ -1,7 +1,7 @@
 <Window x:Class="PdfExtractor.Windows.LotesListWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Lista de Lotes" Height="600" Width="1000" WindowStartupLocation="CenterOwner">
+        Title="Lista de Lotes" Height="600" Width="1100" WindowStartupLocation="CenterOwner">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -63,6 +63,7 @@
                 <DataGridTextColumn Header="Caja" Binding="{Binding Caja}" Width="80"/>
                 <DataGridTextColumn Header="OSM" Binding="{Binding OSMFormatted}" Width="120"/>
                 <DataGridTextColumn Header="MUNI" Binding="{Binding MUNIFormatted}" Width="120"/>
+                <DataGridTextColumn Header="Recibos MUNI" Binding="{Binding TotalRecibosMuni}" Width="90"/>
                 <DataGridTextColumn Header="Crédito" Binding="{Binding CreditoFormatted}" Width="120"/>
                 <DataGridTextColumn Header="Débito" Binding="{Binding DebitoFormatted}" Width="120"/>
                 <DataGridTextColumn Header="Créd+Déb" Binding="{Binding CreditoDebitoFormatted}" Width="120"/>

@@ -1,9 +1,10 @@
 === RESULTADOS DE PRUEBAS DE EXTRACCIÓN ===
-Fecha: 29/9/2025 00:22:09
+Fecha: 1/10/2025 01:24:23
 
 Probando archivo: getjobid484197.pdf
 Valores esperados - Lote: 403279116, OSM: 1478575,98, MUNI: 33016,1, Usuario: CMAGALLANES
-ARCHIVO NO ENCONTRADO: d:\Users\Ikaros\Desktop\control-caja-osm\getjobid484197.pdf
+Valores extraídos - Lote: '403279116', OSM: 1478575,98, MUNI: 33016,10, Usuario: 'CMAGALLANES'
+Coincidencias - Lote: ✓, OSM: ✓, MUNI: ✓, Usuario: ✓
 
 Probando archivo: getjobid485764.pdf
 Valores esperados - Lote: 403279119, OSM: 3243111,06, MUNI: 234994,47, Usuario: FGONZALEZ

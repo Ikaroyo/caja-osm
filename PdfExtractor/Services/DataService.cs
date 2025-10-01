@@ -80,6 +80,7 @@ namespace PdfExtractor.Services
                 USUARIO = data.Usuario, // Nueva propiedad
                 DEPOSITADO = data.Depositado, // Nueva propiedad
                 OBSERVACIONES = data.Observaciones, // Campo Observaciones
+                TOTAL_RECIBOS_MUNI = data.TotalRecibosMuni, // Cantidad recibos MUNI
                 OSM = FormatCurrency(data.OSM),
                 MUNI = FormatCurrency(data.MUNI),
                 Credito = FormatCurrency(data.Credito),
@@ -101,6 +102,7 @@ namespace PdfExtractor.Services
                 Usuario = json.USUARIO ?? "", // Nueva propiedad
                 Depositado = json.DEPOSITADO, // Nueva propiedad
                 Observaciones = json.OBSERVACIONES ?? "", // Campo Observaciones
+                TotalRecibosMuni = json.TOTAL_RECIBOS_MUNI, // Cantidad recibos MUNI
                 OSM = ParseCurrency(json.OSM),
                 MUNI = ParseCurrency(json.MUNI),
                 Credito = ParseCurrency(json.Credito),
@@ -165,6 +167,7 @@ namespace PdfExtractor.Services
         public string USUARIO { get; set; } = ""; // Nueva propiedad
         public bool DEPOSITADO { get; set; } = false; // Nueva propiedad
         public string OBSERVACIONES { get; set; } = ""; // Campo Observaciones
+        public int TOTAL_RECIBOS_MUNI { get; set; } = 0; // Cantidad recibos MUNI
         public string OSM { get; set; } = "";
         public string MUNI { get; set; } = "";
         public string Credito { get; set; } = "";

@@ -399,17 +399,66 @@ namespace PdfExtractor
             try
             {
                 var pdfPath = @"d:\Users\Ikaros\Desktop\control-caja-osm\getjobid484197.pdf";
+                LogDebug($"Verificando archivo PDF en: {pdfPath}");
+                
                 if (System.IO.File.Exists(pdfPath))
                 {
-                    LogDebug("Ejecutando extracción de debug...");
+                    LogDebug("✅ Archivo PDF encontrado, iniciando extracción...");
                     var extractor = new PdfDataExtractor();
                     var data = extractor.ExtractFromFile(pdfPath);
-                    LogDebug("Extracción de debug completada. Revise los archivos debug_*.txt");
+                    LogDebug($"=== RESULTADOS DE EXTRACCIÓN ===");
+                    LogDebug($"OSM: {data.TotalOSM:N2}");
+                    LogDebug($"MUNI: {data.TotalMunicipalidad:N2}");
+                    LogDebug($"Total General: {data.TotalGeneral:N2}");
+                    LogDebug($"Recibos MUNI: {data.TotalRecibosMuni}");
+                    LogDebug($"=== DEBUG INFO ===");
+                    LogDebug(data.DebugInfo ?? "No hay información de debug");
+                    LogDebug("✅ Extracción de debug completada");
+                }
+                else
+                {
+                    LogDebug($"❌ ERROR: Archivo PDF no encontrado en: {pdfPath}");
+                    LogDebug("Verificando archivos PDF disponibles en el directorio...");
+                    
+                    var directory = Path.GetDirectoryName(pdfPath);
+                    if (Directory.Exists(directory))
+                    {
+                        var pdfFiles = Directory.GetFiles(directory, "*.pdf");
+                        LogDebug($"Archivos PDF encontrados en {directory}:");
+                        foreach (var file in pdfFiles)
+                        {
+                            LogDebug($"  - {Path.GetFileName(file)}");
+                        }
+                        
+                        if (pdfFiles.Length > 0)
+                        {
+                            LogDebug($"Intentando con el primer PDF encontrado: {pdfFiles[0]}");
+                            var extractor = new PdfDataExtractor();
+                            var data = extractor.ExtractFromFile(pdfFiles[0]);
+                            LogDebug($"=== RESULTADOS DE EXTRACCIÓN ===");
+                            LogDebug($"OSM: {data.TotalOSM:N2}");
+                            LogDebug($"MUNI: {data.TotalMunicipalidad:N2}");
+                            LogDebug($"Total General: {data.TotalGeneral:N2}");
+                            LogDebug($"Recibos MUNI: {data.TotalRecibosMuni}");
+                            LogDebug($"=== DEBUG INFO ===");
+                            LogDebug(data.DebugInfo ?? "No hay información de debug");
+                            LogDebug("✅ Extracción de debug completada con PDF alternativo");
+                        }
+                        else
+                        {
+                            LogDebug("❌ No se encontraron archivos PDF en el directorio");
+                        }
+                    }
+                    else
+                    {
+                        LogDebug($"❌ El directorio no existe: {directory}");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogDebug($"Error en debug: {ex.Message}");
+                LogDebug($"❌ Error en extracción de debug: {ex.Message}");
+                LogDebug($"StackTrace: {ex.StackTrace}");
             }
         }
 
@@ -1846,6 +1895,19 @@ namespace PdfExtractor
             }
         }
 
+        private void BtnDebugPdf_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                LogDebug("=== INICIANDO DEBUG DE EXTRACCIÓN PDF ===");
+                ExecuteDebugExtraction();
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error en BtnDebugPdf_Click: {ex.Message}");
+            }
+        }
+
         private void CheckForJavaApplets()
         {
             try
@@ -2240,6 +2302,11 @@ namespace PdfExtractor
         private void AdditionalValue_TextChanged(object sender, TextChangedEventArgs e)
         {
             arqueoCajaModule?.OnAdditionalValueChanged();
+        }
+
+        private void AdditionalLabel_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            arqueoCajaModule?.OnLabelChanged();
         }
 
         private void LoteHoy_TextChanged(object sender, TextChangedEventArgs e)

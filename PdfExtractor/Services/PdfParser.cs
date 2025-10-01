@@ -25,6 +25,7 @@ namespace PdfExtractor.Services
                     Usuario = extractedData.Usuario,
                     OSM = extractedData.TotalOSM,
                     MUNI = extractedData.TotalMunicipalidad,
+                    TotalRecibosMuni = extractedData.TotalRecibosMuni,
                     Credito = extractedData.TarjetaCredito,
                     Debito = extractedData.TarjetaDebito,
                     Cheque = extractedData.ChequeDiferido
