@@ -125,25 +125,36 @@ namespace PdfExtractor.Services
             // Remover símbolo de moneda y espacios
             string cleanValue = value.Replace("$", "").Replace(" ", "").Trim();
             
-            // Si el valor viene del JSON (formato simple: 934472.68)
-            if (decimal.TryParse(cleanValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var simpleResult))
+            // FIJO: Los valores del JSON siempre vienen en formato invariante (punto decimal)
+            // Ejemplo: "286163.00" debe interpretarse como 286163.00, NO como 286,16
+            if (decimal.TryParse(cleanValue, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var result))
             {
-                return simpleResult;
+                return result;
             }
             
-            // Fallback: Manejar formato con separadores
+            // Fallback para valores legacy con formato colombiano (coma decimal)
+            if (cleanValue.Contains(",") && !cleanValue.Contains("."))
+            {
+                // Solo coma decimal: "1234,56" -> usar formato colombiano
+                var colombianCulture = new CultureInfo("es-CO");
+                if (decimal.TryParse(cleanValue, NumberStyles.Any, colombianCulture, out var colombianResult))
+                {
+                    return colombianResult;
+                }
+            }
+            
+            // Último fallback: formato con separadores de miles
             if (cleanValue.Contains(".") && cleanValue.Contains(","))
             {
-                // Formato argentino: 1.234.567,89 -> remover puntos y cambiar coma por punto
+                // Formato: 1.234.567,89 -> remover puntos y cambiar coma por punto
                 cleanValue = cleanValue.Replace(".", "").Replace(",", ".");
-            }
-            else if (cleanValue.Contains(",") && !cleanValue.Contains("."))
-            {
-                // Solo coma decimal
-                cleanValue = cleanValue.Replace(",", ".");
+                if (decimal.TryParse(cleanValue, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var finalResult))
+                {
+                    return finalResult;
+                }
             }
             
-            return decimal.TryParse(cleanValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : 0;
+            return 0;
         }
 
         // Método para actualizar estado de depósito en lote

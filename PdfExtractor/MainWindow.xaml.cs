@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -82,6 +83,9 @@ namespace PdfExtractor
             
             // Initialize ArqueoCajaModule
             arqueoCajaModule = new ArqueoCajaModule(LogDebug);
+            
+            // Initialize window detection for Java applets
+            StartWindowDetection();
             
             // Initialize window layout configuration
             windowLayoutConfig = WindowLayoutConfig.Load();
@@ -631,10 +635,16 @@ namespace PdfExtractor
                 WebBrowser.Navigating += WebBrowser_Navigating;
                 WebBrowser.ScriptErrorsSuppressed = false; // MOSTRAR errores para debugging
                 
+                // Sistema de detección de ventanas configurado
+                LogDebug("Sistema de detección de ventanas SIGEMI configurado");
+                
                 // Agregar manejo de errores para debugging
                 WebBrowser.DocumentCompleted += (s, e) => {
                     // Verificar applets después de que el documento esté completo
                     CheckForJavaApplets();
+                    
+                    // Sistema de detección de ventanas ya está activo
+                    LogDebug("Documento completado - detección de ventanas activa");
                 };
                 
                 LogDebug("Eventos del WebBrowser configurados - errores de script visibles");
@@ -692,9 +702,50 @@ namespace PdfExtractor
         {
             try
             {
-                // Permitir ventanas emergentes para Java applets
-                LogDebug("Nueva ventana detectada - permitiendo para Java applets");
-                // No cancelar - permitir que se abra la ventana
+                LogDebug("Nueva ventana emergente detectada (popup)");
+                
+                // Solo procesar si es realmente una nueva ventana (popup), no navegación principal
+                // Intentar capturar la URL de la ventana emergente
+                if (WebBrowser.Document != null)
+                {
+                    try
+                    {
+                        // Buscar enlaces con PDF en el documento que podrían haber generado el popup
+                        var links = WebBrowser.Document.GetElementsByTagName("a");
+                        foreach (System.Windows.Forms.HtmlElement link in links)
+                        {
+                            var linkHref = link.GetAttribute("href");
+                            if (!string.IsNullOrEmpty(linkHref) && IsPdfUrl(linkHref))
+                            {
+                                LogDebug($"URL de PDF popup encontrada: {linkHref}");
+                                HandleCapturedPopupUrl(linkHref);
+                                e.Cancel = true; // Cancelar la ventana emergente
+                                return;
+                            }
+                        }
+                        
+                        // También buscar en elementos de formulario que podrían generar popups
+                        var forms = WebBrowser.Document.GetElementsByTagName("form");
+                        foreach (System.Windows.Forms.HtmlElement form in forms)
+                        {
+                            var action = form.GetAttribute("action");
+                            if (!string.IsNullOrEmpty(action) && IsPdfUrl(action))
+                            {
+                                LogDebug($"URL de PDF desde formulario: {action}");
+                                HandleCapturedPopupUrl(action);
+                                e.Cancel = true; // Cancelar la ventana emergente
+                                return;
+                            }
+                        }
+                    }
+                    catch (Exception docEx)
+                    {
+                        LogDebug($"Error intentando capturar URL del documento: {docEx.Message}");
+                    }
+                }
+                
+                // Si no se pudo capturar una URL de PDF específica, permitir la ventana emergente
+                LogDebug("No se encontró URL de PDF específica - permitiendo ventana emergente");
             }
             catch (Exception ex)
             {
@@ -1155,14 +1206,333 @@ namespace PdfExtractor
         {
             try
             {
-                LogDebug($"Navegando a: {e.Url}");
+                var url = e.Url.ToString();
+                LogDebug($"Navegando a: {url}");
+                
+                // Check if this is our main WebBrowser control or an external window
+                // If it's not our main control, don't interfere at all
+                if (sender != WebBrowser)
+                {
+                    LogDebug($"Navegación en ventana externa detectada - no interfiriendo: {url}");
+                    
+                    // Only capture the URL if it's a PDF URL, but don't cancel anything
+                    if (IsPdfUrl(url))
+                    {
+                        LogDebug($"Capturando URL de ventana externa sin cancelar: {url}");
+                        try
+                        {
+                            HandleCapturedPopupUrl(url);
+                        }
+                        catch (Exception captureEx)
+                        {
+                            LogDebug($"Error capturando URL de ventana externa: {captureEx.Message}");
+                        }
+                    }
+                    return; // Don't do anything else for external windows
+                }
+                
+                // Only handle PDF URLs if this is our main browser navigation
+                if (IsPdfUrl(url))
+                {
+                    LogDebug($"URL de PDF detectada en navegador principal: {url}");
+                    
+                    try
+                    {
+                        HandleCapturedPopupUrl(url);
+                        e.Cancel = true; // Only cancel for main browser
+                        LogDebug($"Navegación cancelada en navegador principal");
+                    }
+                    catch (Exception handleEx)
+                    {
+                        LogDebug($"Error manejando URL en navegador principal: {handleEx.Message}");
+                        // Don't cancel if there's an error handling the URL
+                    }
+                }
             }
             catch (Exception ex)
             {
                 LogDebug($"Error en Navigating: {ex.Message}");
+                // Never cancel navigation on error to prevent script errors
             }
         }
 
+        private bool IsPdfUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                return false;
+                
+            // Excluir la URL base de SIGEMI - solo queremos popups, no la navegación principal
+            if (url.Contains("frmservlet?config=sigemi-vmo"))
+                return false;
+                
+            // Detectar URLs de PDF/reportes (popups)
+            return url.Contains("getjobid") || 
+                   url.Contains(".pdf") || 
+                   (url.Contains("rwservlet") && !url.Contains("frmservlet")) ||
+                   url.Contains("reports/") ||
+                   (url.Contains("192.168.100.80") && url.Contains("7778") && 
+                    (url.Contains("getjobid") || url.Contains(".pdf") || url.Contains("reports")));
+        }
+        
+        private void HandleCapturedPopupUrl(string url)
+        {
+            try
+            {
+                LogDebug($"Procesando URL capturada: {url}");
+                
+                // Cambiar a la pestaña del Extractor PDF (índice 2)
+                Dispatcher.Invoke(() =>
+                {
+                    mainTabControl.SelectedIndex = 2;
+                    LogDebug("Cambiado a pestaña Extractor PDF");
+                    
+                    // Sobrescribir el campo de entrada con la URL capturada
+                    if (txtInput != null)
+                    {
+                        txtInput.Text = url;
+                        txtInput.Focus();
+                        LogDebug($"URL insertada en campo de entrada: {url}");
+                        
+                        // Mostrar mensaje al usuario
+                        txtStatus.Text = $"URL capturada automáticamente: {url.Substring(0, Math.Min(100, url.Length))}..."; 
+                        txtStatus.Foreground = System.Windows.Media.Brushes.Green;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error manejando URL capturada: {ex.Message}");
+            }
+        }
+        
+        private string GetBaseUrl(string fullUrl)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(fullUrl)) return "";
+                
+                var uri = new Uri(fullUrl);
+                return $"{uri.Scheme}://{uri.Host}:{uri.Port}";
+            }
+            catch
+            {
+                // Si falla el parsing, intentar extraer manualmente
+                var match = System.Text.RegularExpressions.Regex.Match(fullUrl, @"(https?://[^/]+)");
+                return match.Success ? match.Groups[1].Value : "";
+            }
+        }
+
+        private System.Timers.Timer? windowDetectionTimer;
+        private HashSet<string> knownWindowTitles = new HashSet<string>();
+        private Dictionary<int, string> windowUrlHistory = new Dictionary<int, string>();
+
+        private void StartWindowDetection()
+        {
+            try
+            {
+                LogDebug("Iniciando detección de ventanas nuevas para applets Java");
+                
+                windowDetectionTimer = new System.Timers.Timer(1000); // Check every second
+                windowDetectionTimer.Elapsed += CheckForNewWindows;
+                windowDetectionTimer.AutoReset = true;
+                windowDetectionTimer.Start();
+
+                // Initialize known windows
+                UpdateKnownWindows();
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error iniciando detección de ventanas: {ex.Message}");
+            }
+        }
+
+        private void CheckForNewWindows(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                var currentProcesses = Process.GetProcesses()
+                    .Where(p => p.ProcessName.Contains("iexplore") || 
+                               p.ProcessName.Contains("chrome") || 
+                               p.ProcessName.Contains("firefox") ||
+                               p.ProcessName.Contains("edge") ||
+                               p.ProcessName.Contains("msedge"))
+                    .ToList();
+
+                foreach (var process in currentProcesses)
+                {
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(process.MainWindowTitle))
+                        {
+                            bool isNewWindow = !knownWindowTitles.Contains(process.MainWindowTitle);
+                            bool isWindowChange = false;
+                            
+                            // Buscar URL de SIGEMI en el título
+                            string sigemReportUrl = ExtractSigemReportUrl(process.MainWindowTitle);
+                            
+                            if (!string.IsNullOrEmpty(sigemReportUrl))
+                            {
+                                // Verificar si es una ventana nueva o si la URL ha cambiado
+                                if (windowUrlHistory.ContainsKey(process.Id))
+                                {
+                                    // Ventana existente - verificar si la URL cambió
+                                    string previousUrl = windowUrlHistory[process.Id];
+                                    if (previousUrl != sigemReportUrl)
+                                    {
+                                        isWindowChange = true;
+                                        LogDebug($"URL cambiada en ventana existente (PID: {process.Id}): {previousUrl} -> {sigemReportUrl}");
+                                    }
+                                }
+                                else
+                                {
+                                    // Nueva ventana con URL de SIGEMI
+                                    isNewWindow = true;
+                                    LogDebug($"Nueva ventana con URL de SIGEMI detectada (PID: {process.Id}): {sigemReportUrl}");
+                                }
+                                
+                                // Si es nueva ventana o URL cambiada, procesar
+                                if (isNewWindow || isWindowChange)
+                                {
+                                    // Actualizar historial de URLs
+                                    windowUrlHistory[process.Id] = sigemReportUrl;
+                                    
+                                    LogDebug($"URL de reporte SIGEMI detectada: {sigemReportUrl}");
+                                    
+                                    // MODO COMPLETAMENTE PASIVO - Solo logear, NO procesar automáticamente
+                                    // Esto evita cualquier interferencia con ventanas externas
+                                    try
+                                    {
+                                        // Solo capturar URL de forma segura sin invocar UI
+                                        LogDebug($"✅ CAPTURADA: {sigemReportUrl}");
+                                        
+                                        // Opcional: Procesar en thread separado para evitar interferencia
+                                        Task.Run(() =>
+                                        {
+                                            try
+                                            {
+                                                // Procesar sin afectar la ventana externa
+                                                Dispatcher.BeginInvoke(() =>
+                                                {
+                                                    try
+                                                    {
+                                                        HandleCapturedPopupUrl(sigemReportUrl);
+                                                    }
+                                                    catch (Exception handleEx)
+                                                    {
+                                                        LogDebug($"Error en HandleCapturedPopupUrl: {handleEx.Message}");
+                                                    }
+                                                });
+                                            }
+                                            catch (Exception taskEx)
+                                            {
+                                                LogDebug($"Error en Task.Run: {taskEx.Message}");
+                                            }
+                                        });
+                                    }
+                                    catch (Exception captureEx)
+                                    {
+                                        LogDebug($"Error capturando URL: {captureEx.Message}");
+                                    }
+                                }
+                            }
+                            
+                            // Agregar título de ventana a conocidas
+                            knownWindowTitles.Add(process.MainWindowTitle);
+                        }
+                    }
+                    catch (Exception processEx)
+                    {
+                        // Ignore access denied errors for system processes
+                        LogDebug($"Error accediendo proceso: {processEx.Message}");
+                    }
+                }
+                
+                // Limpiar historial de procesos que ya no existen
+                CleanupWindowHistory(currentProcesses);
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error verificando ventanas nuevas: {ex.Message}");
+            }
+        }
+
+        private string ExtractSigemReportUrl(string windowTitle)
+        {
+            try
+            {
+                // Buscar específicamente el patrón de reportes SIGEMI
+                var sigemPattern = @"http://192\.168\.100\.80:7778/reports/rwservlet/getjobid\d+[^\s]*";
+                var match = System.Text.RegularExpressions.Regex.Match(windowTitle, sigemPattern);
+                
+                if (match.Success)
+                {
+                    LogDebug($"URL de reporte SIGEMI extraída: {match.Value}");
+                    return match.Value;
+                }
+                
+                // También buscar variaciones del patrón
+                var generalPattern = @"http://192\.168\.100\.80:7778/reports/rwservlet/[^\s]+";
+                var generalMatch = System.Text.RegularExpressions.Regex.Match(windowTitle, generalPattern);
+                
+                if (generalMatch.Success)
+                {
+                    LogDebug($"URL de reporte SIGEMI (patrón general) extraída: {generalMatch.Value}");
+                    return generalMatch.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error extrayendo URL de reporte SIGEMI: {ex.Message}");
+            }
+            
+            return "";
+        }
+
+        private void CleanupWindowHistory(List<Process> currentProcesses)
+        {
+            try
+            {
+                var currentPids = new HashSet<int>(currentProcesses.Select(p => p.Id));
+                var pidsToRemove = windowUrlHistory.Keys.Where(pid => !currentPids.Contains(pid)).ToList();
+                
+                foreach (var pid in pidsToRemove)
+                {
+                    LogDebug($"Limpiando historial de ventana cerrada (PID: {pid}): {windowUrlHistory[pid]}");
+                    windowUrlHistory.Remove(pid);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error limpiando historial de ventanas: {ex.Message}");
+            }
+        }
+
+        private void UpdateKnownWindows()
+        {
+            try
+            {
+                var processes = Process.GetProcesses();
+                foreach (var process in processes)
+                {
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(process.MainWindowTitle))
+                        {
+                            knownWindowTitles.Add(process.MainWindowTitle);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore access errors
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Error actualizando ventanas conocidas: {ex.Message}");
+            }
+        }
+        
         private void LoadSystemInfo()
         {
             try
@@ -2357,152 +2727,53 @@ namespace PdfExtractor
             calculatorOperand = 0;
             calculatorOperation = "";
             isNewCalculation = true;
-            txtCalculatorDisplay.Text = "0";
+            // Calculator display removed - using system of charge instead
         }
 
         private void AddDigit(string digit)
         {
-            if (isNewCalculation)
-            {
-                txtCalculatorDisplay.Text = digit;
-                isNewCalculation = false;
-            }
-            else
-            {
-                if (txtCalculatorDisplay.Text == "0")
-                    txtCalculatorDisplay.Text = digit;
-                else
-                    txtCalculatorDisplay.Text += digit;
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void AddDecimalPoint()
         {
-            if (isNewCalculation)
-            {
-                txtCalculatorDisplay.Text = "0,";
-                isNewCalculation = false;
-            }
-            else if (!txtCalculatorDisplay.Text.Contains(","))
-            {
-                txtCalculatorDisplay.Text += ",";
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void ToggleSign()
         {
-            if (double.TryParse(txtCalculatorDisplay.Text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
-            {
-                value = -value;
-                txtCalculatorDisplay.Text = value.ToString("0.##", CultureInfo.InvariantCulture).Replace(".", ",");
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void SetOperation(string operation)
         {
-            if (double.TryParse(txtCalculatorDisplay.Text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
-            {
-                if (!string.IsNullOrEmpty(calculatorOperation) && !isNewCalculation)
-                {
-                    PerformCalculation();
-                }
-                
-                calculatorResult = value;
-                calculatorOperation = operation;
-                isNewCalculation = true;
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void PerformCalculation()
         {
-            if (double.TryParse(txtCalculatorDisplay.Text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double operand))
-            {
-                double result = calculatorResult;
-                
-                switch (calculatorOperation)
-                {
-                    case "+":
-                        result = calculatorResult + operand;
-                        break;
-                    case "-":
-                        result = calculatorResult - operand;
-                        break;
-                    case "×":
-                        result = calculatorResult * operand;
-                        break;
-                    case "÷":
-                        result = operand != 0 ? calculatorResult / operand : 0;
-                        break;
-                    case "%":
-                        result = calculatorResult % operand;
-                        break;
-                }
-                
-                txtCalculatorDisplay.Text = result.ToString("0.##", CultureInfo.InvariantCulture).Replace(".", ",");
-                calculatorResult = result;
-                calculatorOperation = "";
-                isNewCalculation = true;
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         // Expression evaluation methods
         private void TxtCalculatorDisplay_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
-            {
-                EvaluateExpression();
-                e.Handled = true;
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void TxtCalculatorDisplay_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // Reset calculator state when user starts typing
-            if (!isNewCalculation)
-            {
-                calculatorResult = 0;
-                calculatorOperand = 0;
-                calculatorOperation = "";
-                isNewCalculation = true;
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void BtnEvaluateExpression_Click(object sender, RoutedEventArgs e)
         {
-            EvaluateExpression();
+            // Calculator functionality removed - using system of charge instead
         }
 
         private void EvaluateExpression()
         {
-            try
-            {
-                string expression = txtCalculatorDisplay.Text.Trim();
-                
-                if (string.IsNullOrEmpty(expression) || expression == "0")
-                    return;
-
-                // Replace × and ÷ with * and /
-                expression = expression.Replace("×", "*").Replace("÷", "/");
-                
-                // Replace comma decimal separator with period for calculation
-                expression = expression.Replace(",", ".");
-                
-                // Evaluate the expression
-                double result = EvaluateMathExpression(expression);
-                
-                // Display result with Colombian format
-                txtCalculatorDisplay.Text = result.ToString("0.##", CultureInfo.InvariantCulture).Replace(".", ",");
-                
-                // Update calculator state
-                calculatorResult = result;
-                calculatorOperation = "";
-                isNewCalculation = true;
-            }
-            catch (Exception ex)
-            {
-                txtCalculatorDisplay.Text = "Error: " + ex.Message;
-                LogDebug($"Calculator error: {ex.Message}");
-            }
+            // Calculator functionality removed - using system of charge instead
         }
 
         private double EvaluateMathExpression(string expression)
@@ -2579,6 +2850,552 @@ namespace PdfExtractor
             catch
             {
                 return -1;
+            }
+        }
+
+        // Event handlers para Cuentas Varias
+        private void VariasCobrar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateVariasPaymentStatus();
+        }
+
+        private void BtnImprimirVarias_Click(object sender, RoutedEventArgs e)
+        {
+            GenerateAndPrintVariasReport();
+        }
+
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                // Seleccionar todo el texto cuando el TextBox recibe el foco
+                textBox.SelectAll();
+            }
+        }
+
+        private void BtnNuevoCobro_Click(object sender, RoutedEventArgs e)
+        {
+            // Resetear el sistema para un nuevo cobro
+            var txtCobrar = this.FindName("txtVariasCobrar") as TextBox;
+            if (txtCobrar != null)
+                txtCobrar.Text = "0";
+                
+            ClearVariasCalculator();
+        }
+
+        private void VariasCashCount_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                CalculateVariasCashTotal(textBox);
+                UpdateVariasTotals();
+            }
+        }
+
+        private void VariasOtherValue_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                CalculateVariasOtherTotal(textBox);
+                UpdateVariasTotals();
+            }
+        }
+
+        private void BtnActualizarTotalVarias_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateVariasTotals();
+        }
+
+        private void BtnLimpiarVarias_Click(object sender, RoutedEventArgs e)
+        {
+            ClearVariasCalculator();
+        }
+
+        private void UpdateVariasPaymentStatus()
+        {
+            try
+            {
+                // Obtener monto a cobrar
+                var txtCobrar = this.FindName("txtVariasCobrar") as TextBox;
+                decimal montoCobrar = 0;
+                if (txtCobrar != null)
+                {
+                    string cobraText = txtCobrar.Text.Replace("$", "").Replace(" ", "").Trim();
+                    // Evaluar expresión matemática si es necesario
+                    double result = EvaluateCountExpression(cobraText);
+                    if (result >= 0)
+                    {
+                        montoCobrar = (decimal)result;
+                    }
+                }
+
+                // Calcular total pagado
+                decimal totalEfectivo = 0;
+                totalEfectivo += GetVariasDenominationTotal("txtVarias20000Total");
+                totalEfectivo += GetVariasDenominationTotal("txtVarias10000Total");
+                totalEfectivo += GetVariasDenominationTotal("txtVarias2000Total");
+                totalEfectivo += GetVariasDenominationTotal("txtVarias1000Total");
+                totalEfectivo += GetVariasDenominationTotal("txtVarias500Total");
+                totalEfectivo += GetVariasDenominationTotal("txtVarias200Total");
+                totalEfectivo += GetVariasDenominationTotal("txtVarias100Total");
+
+                decimal totalOtros = 0;
+                totalOtros += GetVariasDenominationTotal("txtVariasValor1Total");
+                totalOtros += GetVariasDenominationTotal("txtVariasValor2Total");
+                totalOtros += GetVariasDenominationTotal("txtVariasValor3Total");
+                totalOtros += GetVariasDenominationTotal("txtVariasValor4Total");
+                totalOtros += GetVariasDenominationTotal("txtVariasValor5Total");
+
+                decimal totalPagado = totalEfectivo + totalOtros;
+                decimal diferencia = montoCobrar - totalPagado;
+
+                // Actualizar UI
+                var txtPagado = this.FindName("txtVariasPagado") as TextBox;
+                var txtFaltante = this.FindName("txtVariasFaltante") as TextBox;
+                var lblFaltante = this.FindName("lblVariasFaltante") as TextBlock;
+
+                if (txtPagado != null)
+                    txtPagado.Text = $"$ {FormatColombianCurrency(totalPagado)}";
+
+                if (txtFaltante != null && lblFaltante != null)
+                {
+                    if (diferencia > 0)
+                    {
+                        // Falta dinero
+                        lblFaltante.Text = "Falta:";
+                        txtFaltante.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68)); // Rojo
+                        txtFaltante.Text = $"$ {FormatColombianCurrency(diferencia)}";
+                    }
+                    else if (diferencia < 0)
+                    {
+                        // Hay cambio
+                        lblFaltante.Text = "Cambio:";
+                        txtFaltante.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129)); // Verde
+                        txtFaltante.Text = $"$ {FormatColombianCurrency(Math.Abs(diferencia))}";
+                    }
+                    else
+                    {
+                        // Exacto
+                        lblFaltante.Text = "Exacto:";
+                        txtFaltante.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(59, 130, 246)); // Azul
+                        txtFaltante.Text = "$ 0";
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Cobro - Monto: {montoCobrar:C}, Pagado: {totalPagado:C}, Diferencia: {diferencia:C}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error actualizando estado de cobro: {ex.Message}");
+            }
+        }
+
+        private void CalculateVariasCashTotal(TextBox countTextBox)
+        {
+            try
+            {
+                string countText = countTextBox.Text;
+                decimal count = 0;
+                decimal denomination = 0;
+
+                // Obtener el valor de la denominación del nombre del control
+                if (countTextBox.Name.Contains("20000"))
+                    denomination = 20000;
+                else if (countTextBox.Name.Contains("10000"))
+                    denomination = 10000;
+                else if (countTextBox.Name.Contains("2000"))
+                    denomination = 2000;
+                else if (countTextBox.Name.Contains("1000"))
+                    denomination = 1000;
+                else if (countTextBox.Name.Contains("500"))
+                    denomination = 500;
+                else if (countTextBox.Name.Contains("200"))
+                    denomination = 200;
+                else if (countTextBox.Name.Contains("100"))
+                    denomination = 100;
+
+                // Evaluar la expresión en el campo de conteo
+                double result = EvaluateCountExpression(countText);
+                if (result >= 0)
+                {
+                    count = (decimal)result;
+                    countTextBox.ToolTip = $"= {FormatColombianCurrency((decimal)result)}";
+                }
+                else
+                {
+                    count = 0;
+                    countTextBox.ToolTip = null;
+                }
+
+                decimal total = count * denomination;
+
+                // Encontrar el TextBox de total correspondiente
+                string totalControlName = countTextBox.Name.Replace("Count", "Total");
+                var totalTextBox = this.FindName(totalControlName) as TextBox;
+
+                if (totalTextBox != null)
+                {
+                    totalTextBox.Text = $"$ {FormatColombianCurrency(total)}";
+                }
+                
+                // Actualizar estado del cobro
+                UpdateVariasPaymentStatus();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error calculando total de denominación en Varias: {ex.Message}");
+            }
+        }
+
+        private void CalculateVariasOtherTotal(TextBox valueTextBox)
+        {
+            try
+            {
+                string valueText = valueTextBox.Text;
+                decimal value = 0;
+
+                // Evaluar la expresión en el campo de valor
+                double result = EvaluateCountExpression(valueText);
+                if (result >= 0)
+                {
+                    value = (decimal)result;
+                    valueTextBox.ToolTip = $"= ${FormatColombianCurrency((decimal)result)}";
+                }
+                else
+                {
+                    value = 0;
+                    valueTextBox.ToolTip = null;
+                }
+
+                // Encontrar el TextBox de total correspondiente
+                string totalControlName = valueTextBox.Name.Replace("Valor", "Valor") + "Total";
+                var totalTextBox = this.FindName(totalControlName) as TextBox;
+
+                if (totalTextBox != null)
+                {
+                    totalTextBox.Text = $"$ {FormatColombianCurrency(value)}";
+                }
+                
+                // Actualizar estado del cobro
+                UpdateVariasPaymentStatus();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error calculando total de otros valores en Varias: {ex.Message}");
+            }
+        }
+
+        private void UpdateVariasTotals()
+        {
+            UpdateVariasPaymentStatus();
+        }
+
+        private decimal GetVariasDenominationTotal(string controlName)
+        {
+            try
+            {
+                var textBox = this.FindName(controlName) as TextBox;
+                if (textBox != null)
+                {
+                    string text = textBox.Text.Replace("$", "").Replace(" ", "").Trim();
+                    if (decimal.TryParse(text, NumberStyles.Any, new CultureInfo("es-CO"), out decimal value))
+                    {
+                        return value;
+                    }
+                }
+                return 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private void ClearVariasCalculator()
+        {
+            try
+            {
+                // Limpiar campos de denominaciones
+                var denominationCounts = new[]
+                {
+                    "txtVarias20000Count", "txtVarias10000Count", "txtVarias2000Count",
+                    "txtVarias1000Count", "txtVarias500Count", "txtVarias200Count", "txtVarias100Count"
+                };
+
+                foreach (string controlName in denominationCounts)
+                {
+                    var textBox = this.FindName(controlName) as TextBox;
+                    if (textBox != null)
+                    {
+                        textBox.Text = "0";
+                        textBox.ToolTip = null;
+                    }
+                }
+
+                // Limpiar campos de otros valores
+                var otherValues = new[]
+                {
+                    "txtVariasValor1", "txtVariasValor2", "txtVariasValor3", "txtVariasValor4", "txtVariasValor5"
+                };
+
+                foreach (string controlName in otherValues)
+                {
+                    var textBox = this.FindName(controlName) as TextBox;
+                    if (textBox != null)
+                    {
+                        textBox.Text = "0";
+                        textBox.ToolTip = null;
+                    }
+                }
+
+                // Actualizar estado del cobro
+                UpdateVariasPaymentStatus();
+
+                System.Diagnostics.Debug.WriteLine("Sistema de cobro limpiado");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error limpiando sistema de cobro: {ex.Message}");
+            }
+        }
+
+        private void GenerateAndPrintVariasReport()
+        {
+            try
+            {
+                // Obtener datos actuales
+                var txtCobrar = this.FindName("txtVariasCobrar") as TextBox;
+                var txtPagado = this.FindName("txtVariasPagado") as TextBox;
+                var txtFaltante = this.FindName("txtVariasFaltante") as TextBox;
+                var lblFaltante = this.FindName("lblVariasFaltante") as TextBlock;
+                var txtNotas = this.FindName("txtVariasNotas") as TextBox;
+
+                decimal montoCobrar = 0;
+                if (txtCobrar != null)
+                {
+                    string cobraText = txtCobrar.Text.Replace("$", "").Replace(" ", "").Trim();
+                    double result = EvaluateCountExpression(cobraText);
+                    if (result >= 0) montoCobrar = (decimal)result;
+                }
+
+                // Generar contenido HTML para impresión
+                string htmlContent = GenerateVariasReportHTML(montoCobrar, txtPagado?.Text ?? "$ 0", 
+                    txtFaltante?.Text ?? "$ 0", lblFaltante?.Text ?? "Falta:", txtNotas?.Text ?? "");
+
+                // Crear archivo temporal
+                string tempFile = Path.Combine(Path.GetTempPath(), $"extracto_cobro_{DateTime.Now:yyyyMMdd_HHmmss}.html");
+                File.WriteAllText(tempFile, htmlContent, System.Text.Encoding.UTF8);
+
+                // Intentar abrir de diferentes formas
+                try
+                {
+                    // Método 1: Intentar con navegador predeterminado
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = tempFile,
+                        UseShellExecute = true
+                    };
+                    Process.Start(psi);
+                    
+                    MessageBox.Show($"Extracto generado exitosamente.\n\nArchivo: {tempFile}\n\nSe abrió en el navegador. Use Ctrl+P para imprimir.", 
+                        "Extracto Generado", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch
+                {
+                    // Método 2: Si falla, intentar con navegadores específicos
+                    bool opened = false;
+                    string[] browsers = { "chrome", "firefox", "msedge", "iexplore" };
+                    
+                    foreach (string browser in browsers)
+                    {
+                        try
+                        {
+                            var psi2 = new ProcessStartInfo
+                            {
+                                FileName = browser,
+                                Arguments = $"\"{tempFile}\"",
+                                UseShellExecute = true
+                            };
+                            Process.Start(psi2);
+                            opened = true;
+                            break;
+                        }
+                        catch { continue; }
+                    }
+                    
+                    if (!opened)
+                    {
+                        // Método 3: Mostrar ubicación del archivo
+                        MessageBox.Show($"No se pudo abrir automáticamente.\n\nEl extracto se guardó en:\n{tempFile}\n\nAbra este archivo en su navegador e imprima con Ctrl+P", 
+                            "Extracto Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+                        
+                        // Abrir la carpeta donde está el archivo
+                        Process.Start("explorer.exe", $"/select,\"{tempFile}\"");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Extracto abierto en el navegador. Use Ctrl+P para imprimir.", 
+                            "Extracto Generado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"Extracto de cobro generado: {tempFile}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al generar extracto: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"Error generando extracto de cobro: {ex.Message}");
+            }
+        }
+
+        private string GenerateVariasReportHTML(decimal montoCobrar, string totalPagado, string faltante, string tipoFaltante, string notas)
+        {
+            var html = new StringBuilder();
+            
+            html.AppendLine("<!DOCTYPE html>");
+            html.AppendLine("<html>");
+            html.AppendLine("<head>");
+            html.AppendLine("    <meta charset='UTF-8'>");
+            html.AppendLine("    <title>Extracto de Cobro - Cuentas Varias</title>");
+            html.AppendLine("    <style>");
+            html.AppendLine("        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; color: #333; }");
+            html.AppendLine("        .header { text-align: center; border-bottom: 2px solid #3182CE; padding-bottom: 15px; margin-bottom: 20px; }");
+            html.AppendLine("        .title { font-size: 24px; font-weight: bold; color: #2D3748; margin-bottom: 5px; }");
+            html.AppendLine("        .subtitle { font-size: 14px; color: #6B7280; }");
+            html.AppendLine("        .info-section { margin: 15px 0; }");
+            html.AppendLine("        .info-label { font-weight: bold; color: #374151; }");
+            html.AppendLine("        .info-value { color: #059669; font-weight: bold; }");
+            html.AppendLine("        .amount-box { background: #F0F9FF; border: 2px solid #3182CE; padding: 10px; margin: 10px 0; text-align: center; }");
+            html.AppendLine("        .amount-large { font-size: 20px; font-weight: bold; color: #1E40AF; }");
+            html.AppendLine("        .denominations { margin: 20px 0; }");
+            html.AppendLine("        .denom-table { width: 100%; border-collapse: collapse; margin: 10px 0; }");
+            html.AppendLine("        .denom-table th, .denom-table td { border: 1px solid #D1D5DB; padding: 8px; text-align: center; }");
+            html.AppendLine("        .denom-table th { background: #F3F4F6; font-weight: bold; }");
+            html.AppendLine("        .notes-section { margin-top: 20px; background: #FFFBEB; border: 1px solid #F59E0B; padding: 15px; }");
+            html.AppendLine("        .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid #E5E7EB; font-size: 12px; color: #6B7280; }");
+            html.AppendLine("        .status-ok { color: #059669; }");
+            html.AppendLine("        .status-pending { color: #DC2626; }");
+            html.AppendLine("        .print-button { background: #3182CE; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 0; }");
+            html.AppendLine("        .print-button:hover { background: #2563EB; }");
+            html.AppendLine("        @media print { .print-button { display: none; } body { margin: 10px; } }");
+            html.AppendLine("    </style>");
+            html.AppendLine("    <script>");
+            html.AppendLine("        function printDocument() { window.print(); }");
+            html.AppendLine("    </script>");
+            html.AppendLine("</head>");
+            html.AppendLine("<body>");
+            
+            // Header
+            html.AppendLine("    <div class='header'>");
+            html.AppendLine("        <div class='title'>💰 EXTRACTO DE COBRO</div>");
+            html.AppendLine("        <div class='subtitle'>Sistema de Cuentas Varias</div>");
+            html.AppendLine($"        <div class='subtitle'>Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}</div>");
+            html.AppendLine("    </div>");
+            html.AppendLine("");
+            html.AppendLine("    <!-- Print Button -->");
+            html.AppendLine("    <div style='text-align: center;'>");
+            html.AppendLine("        <button class='print-button' onclick='printDocument()'>🖨️ Imprimir Este Extracto</button>");
+            html.AppendLine("    </div>");
+            
+            // Monto a cobrar
+            html.AppendLine("    <div class='amount-box'>");
+            html.AppendLine($"        <div class='info-label'>Monto a Cobrar:</div>");
+            html.AppendLine($"        <div class='amount-large'>$ {FormatColombianCurrency(montoCobrar)}</div>");
+            html.AppendLine("    </div>");
+            
+            // Resumen de pagos
+            html.AppendLine("    <div class='info-section'>");
+            html.AppendLine($"        <div><span class='info-label'>Total Pagado:</span> <span class='info-value'>{totalPagado}</span></div>");
+            html.AppendLine($"        <div><span class='info-label'>{tipoFaltante}</span> <span class='{(tipoFaltante.Contains("Falta") ? "status-pending" : "status-ok")}'>{faltante}</span></div>");
+            html.AppendLine("    </div>");
+            
+            // Detalles de denominaciones
+            html.AppendLine("    <div class='denominations'>");
+            html.AppendLine("        <h3>Desglose de Pagos en Efectivo:</h3>");
+            html.AppendLine("        <table class='denom-table'>");
+            html.AppendLine("            <tr><th>Denominación</th><th>Cantidad</th><th>Total</th></tr>");
+            
+            // Agregar denominaciones
+            var denominations = new[] { "20000", "10000", "2000", "1000", "500", "200", "100" };
+            foreach (var denom in denominations)
+            {
+                var countControl = this.FindName($"txtVarias{denom}Count") as TextBox;
+                var totalControl = this.FindName($"txtVarias{denom}Total") as TextBox;
+                
+                string count = countControl?.Text ?? "0";
+                string total = totalControl?.Text ?? "$ 0";
+                
+                if (count != "0")
+                {
+                    html.AppendLine($"            <tr><td>$ {FormatColombianCurrency(decimal.Parse(denom))}</td><td>{count}</td><td>{total}</td></tr>");
+                }
+            }
+            
+            html.AppendLine("        </table>");
+            html.AppendLine("    </div>");
+            
+            // Otros valores
+            html.AppendLine("    <div class='denominations'>");
+            html.AppendLine("        <h3>Otros Pagos:</h3>");
+            html.AppendLine("        <table class='denom-table'>");
+            html.AppendLine("            <tr><th>Concepto</th><th>Valor</th></tr>");
+            
+            for (int i = 1; i <= 5; i++)
+            {
+                var labelControl = this.FindName($"txtVariasEtiqueta{i}") as TextBox;
+                var valueControl = this.FindName($"txtVariasValor{i}Total") as TextBox;
+                
+                string label = labelControl?.Text ?? $"Concepto {i}";
+                string value = valueControl?.Text ?? "$ 0";
+                
+                if (value != "$ 0")
+                {
+                    html.AppendLine($"            <tr><td>{label}</td><td>{value}</td></tr>");
+                }
+            }
+            
+            html.AppendLine("        </table>");
+            html.AppendLine("    </div>");
+            
+            // Notas
+            if (!string.IsNullOrWhiteSpace(notas) && notas != "Escriba aquí cualquier observación sobre este cobro...")
+            {
+                html.AppendLine("    <div class='notes-section'>");
+                html.AppendLine("        <h3>📝 Notas:</h3>");
+                html.AppendLine($"        <p>{System.Web.HttpUtility.HtmlEncode(notas)}</p>");
+                html.AppendLine("    </div>");
+            }
+            
+            // Footer
+            html.AppendLine("    <div class='footer'>");
+            html.AppendLine("        <p>Generado por Sistema de Caja OSM - Cuentas Varias</p>");
+            html.AppendLine($"        <p>Generado el {DateTime.Now:dd/MM/yyyy} a las {DateTime.Now:HH:mm:ss}</p>");
+            html.AppendLine("    </div>");
+            
+            html.AppendLine("</body>");
+            html.AppendLine("</html>");
+            
+            return html.ToString();
+        }
+
+        private string FormatColombianCurrency(decimal value)
+        {
+            // Format with Spanish convention: periods as thousands separators, comma as decimal separator
+            // Examples: 1.234.567 or 1.234.567,89
+            
+            // For integers, don't show decimals
+            if (value == Math.Floor(value))
+            {
+                // Use Spanish culture which naturally handles . for thousands
+                var culture = new CultureInfo("es-ES");
+                return value.ToString("N0", culture);
+            }
+            else
+            {
+                // For decimals, use Spanish format: . for thousands, , for decimals
+                var culture = new CultureInfo("es-ES");
+                return value.ToString("N2", culture);
             }
         }
 

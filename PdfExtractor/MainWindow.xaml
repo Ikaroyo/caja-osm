@@ -7,7 +7,7 @@
  Title="PDF Extractor - Control de Caja OSM" Height="900" Width="1400" WindowState="Maximized">
   <Grid>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="650" MinWidth="400"/>
+      <ColumnDefinition Width="850" MinWidth="600"/>
       <ColumnDefinition Width="5"/>
       <ColumnDefinition Width="*" MinWidth="300"/>
     </Grid.ColumnDefinitions>
@@ -17,7 +17,7 @@
         <!-- WebBrowser clásico para Java applets -->
         <WindowsFormsHost Margin="5" Height="850">
           <wf:WebBrowser x:Name="WebBrowser"
- ScriptErrorsSuppressed="False" WebBrowserShortcutsEnabled="True" IsWebBrowserContextMenuEnabled="True" AllowWebBrowserDrop="True" DocumentCompleted="WebBrowser_DocumentCompleted" Navigating="WebBrowser_Navigating"/>
+ ScriptErrorsSuppressed="True" WebBrowserShortcutsEnabled="True" IsWebBrowserContextMenuEnabled="True" AllowWebBrowserDrop="True" DocumentCompleted="WebBrowser_DocumentCompleted" Navigating="WebBrowser_Navigating"/>
         </WindowsFormsHost>
       </Grid>
     </Border>
@@ -333,87 +333,264 @@
         </TabItem>
         <!-- Cuentas Varias Tab -->
         <TabItem Header="🧮 Cuentas Varias" FontWeight="Bold">
-          <Grid Margin="15">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*"/>
-              <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <!-- Calculator Header -->
-            <GroupBox Grid.Row="0" Header="Calculadora de Cuentas Varias" FontWeight="Bold" FontSize="14" Margin="0,0,0,20">
-              <TextBlock Margin="10" Text="Utiliza esta calculadora para operaciones contables diversas" FontStyle="Italic" Foreground="Gray"/>
-            </GroupBox>
-            <!-- Calculator Display -->
-            <Grid Grid.Row="1">
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-              </Grid.RowDefinitions>
-              <!-- Display -->
-              <GroupBox Grid.Row="0" Header="Pantalla" Margin="0,0,0,20">
-                <StackPanel Margin="10">
-                  <TextBox x:Name="txtCalculatorDisplay"
- Text="0" FontSize="24" FontWeight="Bold" Height="50" TextAlignment="Right" IsReadOnly="False" Background="Black" Foreground="Lime" FontFamily="Consolas" KeyDown="TxtCalculatorDisplay_KeyDown" TextChanged="TxtCalculatorDisplay_TextChanged"/>
-                  <TextBlock Text="Escribe expresiones como: 30*500-500, 100+200*3, etc. Presiona Enter para calcular" FontSize="10" Foreground="Gray" TextAlignment="Center" Margin="0,5,0,0"/>
-                </StackPanel>
-              </GroupBox>
-              <!-- Buttons -->
-              <GroupBox Grid.Row="1" Header="Operaciones">
-                <Grid Margin="10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                  </Grid.ColumnDefinitions>
+          <!-- Modern Sidebar Design with full width and height -->
+          <Border Background="#F3F4F6" Padding="0">
+            <Grid Background="White">
+              <Border BorderBrush="#D1D5DB" BorderThickness="1">
+                <Grid>
                   <Grid.RowDefinitions>
-                    <RowDefinition Height="50"/>
-                    <RowDefinition Height="50"/>
-                    <RowDefinition Height="50"/>
-                    <RowDefinition Height="50"/>
-                    <RowDefinition Height="50"/>
-                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="*"/>
                   </Grid.RowDefinitions>
-                  <!-- Row 0 -->
-                  <Button Grid.Row="0" Grid.Column="0" Content="C" Click="BtnCalc_Click" Margin="2" Background="Red" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="0" Grid.Column="1" Content="±" Click="BtnCalc_Click" Margin="2" Background="Orange" Foreground="White"/>
-                  <Button Grid.Row="0" Grid.Column="2" Content="%" Click="BtnCalc_Click" Margin="2" Background="Orange" Foreground="White"/>
-                  <Button Grid.Row="0" Grid.Column="3" Content="÷" Click="BtnCalc_Click" Margin="2" Background="DarkBlue" Foreground="White" FontWeight="Bold"/>
-                  <!-- Row 1 -->
-                  <Button Grid.Row="1" Grid.Column="0" Content="7" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="1" Grid.Column="1" Content="8" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="1" Grid.Column="2" Content="9" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="1" Grid.Column="3" Content="×" Click="BtnCalc_Click" Margin="2" Background="DarkBlue" Foreground="White" FontWeight="Bold"/>
-                  <!-- Row 2 -->
-                  <Button Grid.Row="2" Grid.Column="0" Content="4" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="2" Grid.Column="1" Content="5" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="2" Grid.Column="2" Content="6" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="2" Grid.Column="3" Content="-" Click="BtnCalc_Click" Margin="2" Background="DarkBlue" Foreground="White" FontWeight="Bold"/>
-                  <!-- Row 3 -->
-                  <Button Grid.Row="3" Grid.Column="0" Content="1" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="3" Grid.Column="1" Content="2" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="3" Grid.Column="2" Content="3" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="3" Grid.Column="3" Content="+" Click="BtnCalc_Click" Margin="2" Background="DarkBlue" Foreground="White" FontWeight="Bold"/>
-                  <!-- Row 4 -->
-                  <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="0" Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="4" Grid.Column="2" Content="," Click="BtnCalc_Click" Margin="2" Background="Gray" Foreground="White" FontWeight="Bold"/>
-                  <Button Grid.Row="4" Grid.Column="3" Content="=" Click="BtnCalc_Click" Margin="2" Background="Green" Foreground="White" FontWeight="Bold"/>
-                  <!-- Row 5 - Eval Button -->
-                  <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Content="📝 EVALUAR EXPRESIÓN" Click="BtnEvaluateExpression_Click" Margin="2" Background="Purple" Foreground="White" FontWeight="Bold"/>
+                  <!-- Main Content (Scrollable) -->
+                  <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12">
+                      <!-- Cash Collection Header -->
+                      <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,12">
+                        <StackPanel>
+                          <TextBlock Text="Sistema de Cobro" FontSize="16" FontWeight="Bold" Foreground="#2D3748" Margin="0,0,0,8"/>
+                          <TextBlock Text="Establece el monto a cobrar y registra los pagos recibidos" FontSize="11" Foreground="#6B7280" Margin="0,0,0,16"/>
+                          
+                          <!-- Amount to Charge -->
+                          <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="Auto"/>
+                              <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Cobrar: $" FontWeight="Bold" FontSize="14" Foreground="#2D3748" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" x:Name="txtVariasCobrar" Text="0" FontSize="14" FontWeight="Bold" Height="32" 
+                                     TextAlignment="Right" BorderBrush="#3182CE" BorderThickness="2" Padding="8,4"
+                                     Background="White" Foreground="#2D3748" TextChanged="VariasCobrar_TextChanged"/>
+                          </Grid>
+                          
+                          <!-- Payment Status -->
+                          <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="*"/>
+                              <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Total Paid -->
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                              <TextBlock Text="Total Pagado:" FontSize="11" Foreground="#6B7280" Margin="0,0,0,4"/>
+                              <TextBox x:Name="txtVariasPagado" Text="$ 0" FontSize="13" FontWeight="Bold" Height="28"
+                                       TextAlignment="Right" IsReadOnly="True" Background="#10B981" Foreground="White" 
+                                       BorderThickness="0" Padding="6"/>
+                            </StackPanel>
+                            
+                            <!-- Balance/Change -->
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                              <TextBlock x:Name="lblVariasFaltante" Text="Falta:" FontSize="11" Foreground="#6B7280" Margin="0,0,0,4"/>
+                              <TextBox x:Name="txtVariasFaltante" Text="$ 0" FontSize="13" FontWeight="Bold" Height="28"
+                                       TextAlignment="Right" IsReadOnly="True" Background="#EF4444" Foreground="White" 
+                                       BorderThickness="0" Padding="6"/>
+                            </StackPanel>
+                          </Grid>
+                          
+                          <!-- Action Buttons -->
+                          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                            <Button x:Name="btnVariasNuevoCobro" Content="Nuevo Cobro" Background="#3182CE" Foreground="White" 
+                                    FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="BtnNuevoCobro_Click"/>
+                            <Button x:Name="btnVariasLimpiar" Content="Limpiar Todo" Background="#6B7280" Foreground="White" 
+                                    FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="BtnLimpiarVarias_Click"/>
+                            <Button x:Name="btnVariasImprimir" Content="🖨️ Imprimir" Background="#059669" Foreground="White" 
+                                    FontWeight="Bold" Padding="12,6" Click="BtnImprimirVarias_Click"/>
+                          </StackPanel>
+                        </StackPanel>
+                      </Border>
+                      
+                      <!-- Cash Counting Section -->
+                      <Border Padding="0">
+                        <StackPanel>
+                          <TextBlock Text="Pagos en Efectivo" FontSize="11" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,8"/>
+                          <!-- Denomination Fields -->
+                          <StackPanel x:Name="DenominationsPanelVarias">
+                            <!-- $20,000 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 20.000" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias20000Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias20000Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- $10,000 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 10.000" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias10000Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias10000Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- $2,000 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 2.000" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias2000Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias2000Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- $1,000 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 1.000" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias1000Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias1000Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- $500 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 500" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias500Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias500Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- $200 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 200" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias200Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias200Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- $100 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Text="$ 100" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0"/>
+                              <TextBox Grid.Column="1" x:Name="txtVarias100Count"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasCashCount_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVarias100Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                          </StackPanel>
+                        </StackPanel>
+                      </Border>
+                      
+                      <!-- Other Values Section -->
+                      <Border BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Background="#F9FAFB" Padding="12" Margin="0,8,0,0">
+                        <StackPanel>
+                          <TextBlock Text="Otros Pagos" FontSize="11" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,8"/>
+                          <!-- Other Value Fields with editable labels -->
+                          <StackPanel x:Name="OtherValuesPanelVarias">
+                            <!-- Valor 1 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtVariasEtiqueta1" Text="Tarjetas" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="1" x:Name="txtVariasValor1"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasOtherValue_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVariasValor1Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- Valor 2 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtVariasEtiqueta2" Text="Cheques" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="1" x:Name="txtVariasValor2"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasOtherValue_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVariasValor2Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- Valor 3 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtVariasEtiqueta3" Text="Extracciones" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="1" x:Name="txtVariasValor3"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasOtherValue_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVariasValor3Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- Valor 4 -->
+                            <Grid Margin="0,0,0,6">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtVariasEtiqueta4" Text="Otros" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="1" x:Name="txtVariasValor4"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasOtherValue_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVariasValor4Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                            <!-- Valor 5 -->
+                            <Grid>
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <TextBox Grid.Column="0" x:Name="txtVariasEtiqueta5" Text="Varios" FontWeight="Medium" Foreground="#374151" FontSize="11" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0" Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="1" x:Name="txtVariasValor5"
+ Text="0" TextAlignment="Center" FontSize="11" Height="24" BorderBrush="#D1D5DB" Margin="4,0" TextChanged="VariasOtherValue_TextChanged" GotFocus="TextBox_GotFocus"/>
+                              <TextBox Grid.Column="2" x:Name="txtVariasValor5Total"
+ Text="$ 0" IsReadOnly="True" Background="#F9FAFB" BorderBrush="#E5E7EB" FontSize="11" Height="24" TextAlignment="Right" Margin="4,0,0,0"/>
+                            </Grid>
+                          </StackPanel>
+                        </StackPanel>
+                      </Border>
+                      
+                      <!-- Notes Section -->
+                      <Border BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
+                        <StackPanel>
+                          <TextBlock Text="📝 Notas del Cobro" FontSize="14" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,8"/>
+                          <TextBox x:Name="txtVariasNotas" AcceptsReturn="True" TextWrapping="Wrap" Height="60" 
+                                   Background="#F9FAFB" BorderBrush="#D1D5DB" BorderThickness="1" Padding="8"
+                                   FontSize="11" Foreground="#374151" 
+                                   Text="Escriba aquí cualquier observación sobre este cobro..." GotFocus="TextBox_GotFocus"/>
+                        </StackPanel>
+                      </Border>
+                                            
+                    </StackPanel>
+                  </ScrollViewer>
                 </Grid>
-              </GroupBox>
+              </Border>
             </Grid>
-            <!-- Calculator Info -->
-            <GroupBox Grid.Row="2" Header="Información">
-              <StackPanel Margin="10">
-                <TextBlock Text="• Utiliza la coma (,) como separador decimal" FontSize="12" Margin="0,2"/>
-                <TextBlock Text="• Presiona C para limpiar" FontSize="12" Margin="0,2"/>
-                <TextBlock Text="• Operaciones: +, -, ×, ÷, %" FontSize="12" Margin="0,2"/>
-                <TextBlock Text="• Escribe expresiones: 30*500-500, 100+200*3" FontSize="12" Margin="0,2" FontWeight="Bold" Foreground="Purple"/>
-                <TextBlock Text="• Presiona Enter o botón EVALUAR para calcular" FontSize="12" Margin="0,2" FontWeight="Bold" Foreground="Purple"/>
-              </StackPanel>
-            </GroupBox>
-          </Grid>
+          </Border>
         </TabItem>
         <!-- PDF Extractor Tab -->
         <TabItem Header="📄 Extractor PDF" FontWeight="Bold">
@@ -522,7 +699,7 @@
           </Grid>
         </TabItem>
         <!-- Debug Tab -->
-        <TabItem Header="🐛 Debug" FontWeight="Bold" Background="Orange">
+        <TabItem Header="🐛 Debug" FontWeight="Bold" Background="Orange" Visibility="Collapsed">
           <Grid Margin="10">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto"/>
